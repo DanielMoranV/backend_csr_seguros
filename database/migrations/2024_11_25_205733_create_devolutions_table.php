@@ -13,6 +13,14 @@ return new class extends Migration
     {
         Schema::create('devolutions', function (Blueprint $table) {
             $table->id();
+            $table->dateTime('date');
+            $table->foreignId('invoice_id')->constrained('invoices');
+            $table->string('type');
+            $table->text('reason');
+            $table->string('period');
+            $table->string('biller');
+            $table->string('status');
+            $table->foreignId('admission_id')->constrained('admissions');
             $table->timestamps();
         });
     }
