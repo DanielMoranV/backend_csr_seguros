@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,3 +17,16 @@ Route::prefix('auth')->group(function () {
         Route::post('/me', [AuthController::class, 'me'])->name('auth.me');
     });
 });
+
+// User Management Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'users'
+], function () {
+    Route::post('/store', [UserController::class, 'storeUsers'])->name('users.storeMultiple');
+    Route::patch('/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::post('/{id}/photoprofile', [UserController::class, 'photoProfile'])->name('users.photoProfile');
+    Route::get('/', [UserController::class, 'index'])->name('users.index');
+});
+
+Route::apiResource('users', UserController::class)->middleware('role:dev|admin');
