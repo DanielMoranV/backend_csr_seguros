@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             'position' => 'Desarrollador',
             'dni' => '70315050',
             'phone' => '948860381',
+            'position' => 'Soporte T.I',
         ]);
 
         $this->call([
