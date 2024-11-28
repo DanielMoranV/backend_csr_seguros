@@ -17,9 +17,9 @@ class UserController extends Controller
     protected $userRepositoryInterface;
     protected $relations = ['roles'];
 
-    public function __construct(UserRepositoryInterface $userRepository)
+    public function __construct(UserRepositoryInterface $userRepositoryInterface)
     {
-        $this->userRepositoryInterface = $userRepository;
+        $this->userRepositoryInterface = $userRepositoryInterface;
     }
 
     public function index()
@@ -94,10 +94,12 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
+            Log::info($data);
             $this->userRepositoryInterface->update($data, $id);
             DB::commit();
             return ApiResponseClass::sendResponse($data, 'Record updated succesful', 200);
         } catch (\Exception $ex) {
+            Log::error($ex);
             DB::rollBack();
             return ApiResponseClass::rollback($ex);
         }

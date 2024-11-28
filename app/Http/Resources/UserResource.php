@@ -21,7 +21,7 @@ class UserResource extends JsonResource
             'name' => $this->name,
             'email' => $this->email,
             'phone' => $this->phone,
-            'photo' => $this->photo,
+            'url_photo_profile' => $this->url_photo_profile,
             'position' => $this->position,
             'role' => $this->whenLoaded('roles') && $this->roles->isNotEmpty()
                 ? new RoleResource($this->roles->first())

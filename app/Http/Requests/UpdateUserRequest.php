@@ -29,7 +29,7 @@ class UpdateUserRequest extends FormRequest
             'dni' => 'nullable|min:8|max:8',
             'email' => 'nullable|email',
             'password' => 'nullable|min:8',
-            'photo' => 'nullable|file|image',
+            'url_photo_profile' => 'nullable|file|image',
             'position' => 'nullable',
             'is_active' => 'nullable|boolean'
         ];

@@ -51,8 +51,6 @@ class ApiResponseClass
             $response['message'] = $message;
         }
 
-        Log::info('Respuesta de la API', ['response' => $response]);
-
         return response()->json($response, $code);
     }
     public static function errorResponse($message, $code = 500)

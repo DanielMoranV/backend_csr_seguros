@@ -29,7 +29,7 @@ class StoreUserRequest extends FormRequest
             'email' => 'required|email',
             'position' => 'required',
             'phone' => 'required',
-            'photo' => 'required',
+            'url_photo_profile' => 'required',
             'password' => 'required|confirmed|min:8',
         ];
     }
