@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
             'name' => 'Daniel Moran Vilchez',
             'email' => 'daniel.moranv94@gmail.com',
             'password' => bcrypt('admin3264'),
-            'cargo' => 'Desarrollador',
+            'position' => 'Desarrollador',
             'dni' => '70315050',
             'phone' => '948860381',
         ]);

@@ -5,8 +5,9 @@ namespace App\Http\Requests;
 use App\Classes\ApiResponseClass;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
-class StoreUserRequest extends FormRequest
+class UpdateUserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,15 +25,29 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required',
-            'dni' => 'required|unique:users',
-            'email' => 'required|email',
-            'position' => 'required',
-            'phone' => 'required',
-            'photo' => 'required',
-            'password' => 'required|confirmed|min:8',
+            'name' => 'nullable',
+            'dni' => 'nullable|min:8|max:8',
+            'email' => 'nullable|email',
+            'password' => 'nullable|min:8',
+            'photo' => 'nullable|file|image',
+            'position' => 'nullable',
+            'is_active' => 'nullable|boolean'
         ];
     }
+
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation()
+    {
+        if ($this->has('is_active')) {
+            $this->merge([
+                'is_active' => $this->is_active ? 1 : 0,
+            ]);
+        }
+    }
+
     public function failedValidation(Validator $validator)
     {
         ApiResponseClass::validationError($validator);

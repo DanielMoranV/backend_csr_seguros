@@ -18,11 +18,15 @@ Route::prefix('auth')->group(function () {
     });
 });
 
-// Rutas Usuarios
-Route::prefix('users')->group(function () {
+// User Management Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'users'
+], function () {
+    Route::post('/store', [UserController::class, 'storeUsers'])->name('users.storeMultiple');
+    Route::patch('/{id}/restore', [UserController::class, 'restore'])->name('users.restore');
+    Route::post('/{id}/photoprofile', [UserController::class, 'photoProfile'])->name('users.photoProfile');
     Route::get('/', [UserController::class, 'index'])->name('users.index');
-    Route::post('/', [UserController::class, 'store'])->name('users.store');
-    Route::get('/{id}', [UserController::class, 'show'])->name('users.show');
-    Route::put('/{id}', [UserController::class, 'update'])->name('users.update');
-    Route::delete('/{id}', [UserController::class, 'destroy'])->name('users.destroy');
 });
+
+Route::apiResource('users', UserController::class)->middleware('role:dev|admin');
