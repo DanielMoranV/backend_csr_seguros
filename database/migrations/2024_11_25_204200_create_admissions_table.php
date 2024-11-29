@@ -17,8 +17,10 @@ return new class extends Migration
             $table->dateTime('attendance_date');
             $table->string('type');
             $table->string('doctor');
+            $table->decimal('amount', 10, 2);
             $table->foreignId('insurer_id')->constrained('insurers');
             $table->string('company');
+            $table->enum('status', ['Pendiente', 'Liquidado', 'Anulado']);
             $table->string('patient');
             $table->foreignId('medical_record_id')->constrained('medical_records');
             $table->timestamps();

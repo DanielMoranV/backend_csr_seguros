@@ -2,8 +2,11 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InsurerController;
+use App\Http\Controllers\MedicalRecordController;
+use App\Http\Controllers\AdmissionController;
+use App\Http\Controllers\InvoiceController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -30,3 +33,16 @@ Route::group([
 });
 
 Route::apiResource('users', UserController::class)->middleware('role:dev|admin');
+
+
+// Insurer Routes
+Route::apiResource('insurers', InsurerController::class)->middleware('role:dev|admin');
+
+// Medical Record Routes
+Route::apiResource('medical-records', MedicalRecordController::class)->middleware('role:dev|admin');
+
+// Admission Routes
+Route::apiResource('admissions', AdmissionController::class)->middleware('role:dev|admin');
+
+// Invoice Routes
+Route::apiResource('invoices', InvoiceController::class)->middleware('role:dev|admin');

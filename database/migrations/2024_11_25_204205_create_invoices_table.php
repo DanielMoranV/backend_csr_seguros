@@ -15,7 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('number');
             $table->dateTime('issue_date');
-            $table->enum('status', ['Pending', 'Paid', 'NC']);
+            $table->decimal('amount', 10, 2);
+            $table->enum('status', ['Pendiente', 'Pagado', 'NC']);
             $table->dateTime('payment_date')->nullable();
             $table->foreignId('admission_id')->constrained('admissions');
             $table->timestamps();

@@ -16,6 +16,7 @@ class Admission extends Model
         'doctor',
         'insurer_id',
         'company',
+        'amount',
         'patient',
         'medical_record_id',
     ];
