@@ -35,9 +35,43 @@ class AdmissionController extends Controller
 
     public function store(StoreAdmissionRequest $request)
     {
-        $data = $request->all();
-        $admission = $this->admissionRepositoryInterface->store($data);
-        return ApiResponseClass::sendResponse(new AdmissionResource($admission), '', 200);
+        $data = $request->validated();
+        DB::beginTransaction();
+        try {
+            $admission = $this->admissionRepositoryInterface->store($data);
+            DB::commit();
+            return ApiResponseClass::sendResponse(new AdmissionResource($admission), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function update(UpdateAdmissionRequest $request, string $id)
+    {
+        $data = $request->validated();
+        DB::beginTransaction();
+        try {
+            $admission = $this->admissionRepositoryInterface->update($data, $id);
+            DB::commit();
+            return ApiResponseClass::sendResponse(new AdmissionResource($admission), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function destroy(string $id)
+    {
+        DB::beginTransaction();
+        try {
+            $this->admissionRepositoryInterface->delete($id);
+            DB::commit();
+            return ApiResponseClass::sendResponse(null, '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
     }
 
     public function storeMultiple(StoreAdmissionsRequest $request)
