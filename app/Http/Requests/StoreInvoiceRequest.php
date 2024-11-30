@@ -11,7 +11,7 @@ class StoreInvoiceRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,12 @@ class StoreInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'number' => 'required|string|max:10',
+            'issue_date' => 'required|date',
+            'status' => 'required|string|max:255',
+            'payment_date' => 'required|date',
+            'amount' => 'required|numeric|min:0',
+            'admission_id' => 'required|exists:admissions,id',
         ];
     }
 }

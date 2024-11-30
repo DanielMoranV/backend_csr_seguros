@@ -14,6 +14,7 @@ class Invoice extends Model
         'issue_date',
         'status',
         'payment_date',
+        'amount',
         'admission_id',
     ];
 

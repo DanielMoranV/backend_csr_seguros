@@ -20,7 +20,11 @@ class InvoiceResource extends JsonResource
             'issue_date' => $this->issue_date,
             'status' => $this->status,
             'payment_date' => $this->payment_date,
-            'admission' => $this->admission,
+            'admission_id' => $this->admission_id,
+            'amount' => $this->amount,
+            'admission' => $this->whenLoaded('admission', function () {
+                return new AdmissionResource($this->admission);
+            }),
         ];
     }
 }

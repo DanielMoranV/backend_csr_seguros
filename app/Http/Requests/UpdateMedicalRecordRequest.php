@@ -11,7 +11,7 @@ class UpdateMedicalRecordRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,9 @@ class UpdateMedicalRecordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'patient' => 'string|max:255',
+            'color' => 'string|max:255',
+            'description' => 'string|max:255',
         ];
     }
 }

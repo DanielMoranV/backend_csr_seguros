@@ -11,7 +11,7 @@ class UpdateInsurerRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,8 @@ class UpdateInsurerRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'shipping_period' => 'string|max:255',
+            'payment_period' => 'string|max:255',
         ];
     }
 }

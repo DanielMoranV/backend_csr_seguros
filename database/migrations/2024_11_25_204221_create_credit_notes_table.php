@@ -16,7 +16,7 @@ return new class extends Migration
             $table->dateTime('date');
             $table->string('number');
             $table->foreignId('invoice_id')->constrained('invoices');
-            $table->string('reason');
+            $table->string('reason')->nullable();
             $table->timestamps();
         });
     }

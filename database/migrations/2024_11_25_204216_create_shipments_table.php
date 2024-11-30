@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
             $table->dateTime('shipment_date');
-            $table->dateTime('reception_date');
+            $table->dateTime('reception_date')->nullable();
             $table->foreignId('invoice_id')->constrained('invoices');
-            $table->text('remarks');
+            $table->text('remarks')->nullable();
             $table->timestamps();
         });
     }

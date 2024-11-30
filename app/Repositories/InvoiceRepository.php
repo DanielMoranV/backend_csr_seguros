@@ -14,4 +14,9 @@ class InvoiceRepository extends BaseRepository implements InvoiceRepositoryInter
     {
         parent::__construct($model);
     }
+
+    public function updateByNumber($number, $data)
+    {
+        return $this->model->where('number', $number)->update($data);
+    }
 }

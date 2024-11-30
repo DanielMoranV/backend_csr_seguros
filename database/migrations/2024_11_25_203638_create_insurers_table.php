@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('insurers', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->integer('shipping_period'); // Periodo de envio en días
-            $table->integer('payment_period'); // Periodo de pago en días
+            $table->string('name')->unique();
+            $table->integer('shipping_period')->nullable(); // Periodo de envio en días
+            $table->integer('payment_period')->nullable(); // Periodo de pago en días
             $table->timestamps();
         });
     }

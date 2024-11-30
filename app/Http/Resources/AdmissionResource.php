@@ -21,11 +21,20 @@ class AdmissionResource extends JsonResource
             'type' => $this->type,
             'doctor' => $this->doctor,
             'amount' => $this->amount,
-            'insurer' => $this->insurer,
+            'insurer_id' => $this->insurer_id,
             'company' => $this->company,
             'status' => $this->status,
             'patient' => $this->patient,
-            'medical_record' => $this->medical_record,
+            'medical_record_id' => $this->medical_record_id,
+            'insurer' => $this->whenLoaded('insurer', function () {
+                return new InsurerResource($this->insurer);
+            }),
+            'medical_record' => $this->whenLoaded('medicalRecord', function () {
+                return new MedicalRecordResource($this->medicalRecord);
+            }),
+            'invoices' => $this->whenLoaded('invoices', function () {
+                return InvoiceResource::collection($this->invoices);
+            }),
         ];
     }
 }

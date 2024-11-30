@@ -11,7 +11,7 @@ class StoreMedicalRecordRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,10 @@ class StoreMedicalRecordRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'number' => 'required|string|max:10',
+            'patient' => 'required|string|max:255',
+            'color' => 'string|max:255',
+            'description' => 'string|max:255',
         ];
     }
 }

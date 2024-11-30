@@ -11,7 +11,7 @@ class StoreAdmissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,15 @@ class StoreAdmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'number' => 'required|string|max:10',
+            'attendance_date' => 'required|date',
+            'type' => 'required|string|max:255',
+            'doctor' => 'string|max:255',
+            'insurer_id' => 'exists:insurers,id',
+            'company' => 'string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'patient' => 'required|string|max:255',
+            'medical_record_id' => 'exists:medical_records,id',
         ];
     }
 }

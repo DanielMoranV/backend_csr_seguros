@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateInvoiceRequest extends FormRequest
+class UpdateInsurersRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +22,8 @@ class UpdateInvoiceRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'issue_date' => 'date',
-            'status' => 'string|max:255',
-            'payment_date' => 'date',
-            'amount' => 'numeric|min:0',
-            'admission_id' => 'exists:admissions,id',
+            '*.shipping_period' => 'string|max:255',
+            '*.payment_period' => 'string|max:255',
         ];
     }
 }

@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
-            $table->integer('number');
-            $table->string('patient');
-            $table->string('color');
-            $table->string('description');
+            $table->integer('number')->unique();
+            $table->string('patient')->nullable();
+            $table->string('color')->nullable();
+            $table->string('description')->nullable();
             $table->timestamps();
         });
     }

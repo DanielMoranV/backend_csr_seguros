@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('admissions', function (Blueprint $table) {
             $table->id();
-            $table->integer('number');
+            $table->integer('number')->unique();
             $table->dateTime('attendance_date');
-            $table->string('type');
-            $table->string('doctor');
-            $table->decimal('amount', 10, 2);
-            $table->foreignId('insurer_id')->constrained('insurers');
-            $table->string('company');
-            $table->enum('status', ['Pendiente', 'Liquidado', 'Anulado']);
-            $table->string('patient');
-            $table->foreignId('medical_record_id')->constrained('medical_records');
+            $table->string('type')->nullable();
+            $table->string('doctor')->nullable();
+            $table->decimal('amount', 10, 2)->nullable();
+            $table->foreignId('insurer_id')->constrained('insurers')->nullable();
+            $table->string('company')->nullable();
+            $table->enum('status', ['Pendiente', 'Liquidado', 'Anulado'])->nullable();
+            $table->string('patient')->nullable();
+            $table->foreignId('medical_record_id')->constrained('medical_records')->nullable();
             $table->timestamps();
         });
     }

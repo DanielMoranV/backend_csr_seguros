@@ -14,4 +14,9 @@ class InsurerRepository extends BaseRepository implements InsurerRepositoryInter
     {
         parent::__construct($model);
     }
+
+    public function updateByName($name, $data)
+    {
+        return $this->model->where('name', $name)->update($data);
+    }
 }

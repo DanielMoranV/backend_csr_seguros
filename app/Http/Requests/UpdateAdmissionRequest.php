@@ -11,7 +11,7 @@ class UpdateAdmissionRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -22,7 +22,14 @@ class UpdateAdmissionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'attendance_date' => 'date',
+            'type' => 'string|max:255',
+            'doctor' => 'string|max:255',
+            'insurer_id' => 'exists:insurers,id',
+            'company' => 'string|max:255',
+            'amount' => 'numeric|min:0',
+            'patient' => 'string|max:255',
+            'medical_record_id' => 'exists:medical_records,id',
         ];
     }
 }

@@ -14,4 +14,9 @@ class AdmissionRepository extends BaseRepository implements AdmissionRepositoryI
     {
         parent::__construct($model);
     }
+
+    public function updateByNumber($number, $data)
+    {
+        return $this->model->where('number', $number)->update($data);
+    }
 }

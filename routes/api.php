@@ -36,7 +36,15 @@ Route::apiResource('users', UserController::class)->middleware('role:dev|admin')
 
 
 // Insurer Routes
-Route::apiResource('insurers', InsurerController::class)->middleware('role:dev|admin');
+
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'insurers'
+], function () {
+    Route::post('/store', [InsurerController::class, 'storeMultiple'])->name('insurers.storeMultiple');
+    Route::apiResource('insurers', InsurerController::class);
+});
+
 
 // Medical Record Routes
 Route::apiResource('medical-records', MedicalRecordController::class)->middleware('role:dev|admin');

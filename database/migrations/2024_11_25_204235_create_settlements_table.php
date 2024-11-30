@@ -14,21 +14,21 @@ return new class extends Migration
         Schema::create('settlements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admission_id')->constrained('admissions');
-            $table->string('biller');
-            $table->boolean('received_file');
-            $table->dateTime('reception_date');
-            $table->boolean('settled');
-            $table->dateTime('settled_date');
-            $table->boolean('audited');
-            $table->dateTime('audited_date');
-            $table->boolean('billed');
-            $table->foreignId('invoice_id')->constrained('invoices');
-            $table->boolean('shipped');
-            $table->dateTime('shipment_date');
-            $table->boolean('paid');
-            $table->dateTime('payment_date');
-            $table->enum('status', ['Pendiente', 'Liquidado', 'Auditoría', 'Facturado', 'Enviado', 'Pagado']);
-            $table->string('period');
+            $table->string('biller')->nullable(); // Nombre del facturador
+            $table->boolean('received_file')->default(false);
+            $table->dateTime('reception_date')->nullable();
+            $table->boolean('settled')->default(false);
+            $table->dateTime('settled_date')->nullable();
+            $table->boolean('audited')->default(false);
+            $table->dateTime('audited_date')->nullable();
+            $table->boolean('billed')->default(false);
+            $table->foreignId('invoice_id')->constrained('invoices')->nullable();
+            $table->boolean('shipped')->default(false);
+            $table->dateTime('shipment_date')->nullable();
+            $table->boolean('paid')->default(false);
+            $table->dateTime('payment_date')->nullable();
+            $table->enum('status', ['Pendiente', 'Liquidado', 'Auditoría', 'Facturado', 'Enviado', 'Pagado'])->default('Pendiente');
+            $table->string('period')->nullable();
             $table->timestamps();
         });
     }

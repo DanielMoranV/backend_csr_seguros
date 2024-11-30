@@ -13,10 +13,10 @@ return new class extends Migration
     {
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
-            $table->string('number');
+            $table->string('number')->unique();
             $table->dateTime('issue_date');
             $table->decimal('amount', 10, 2);
-            $table->enum('status', ['Pendiente', 'Pagado', 'NC']);
+            $table->enum('status', ['Pendiente', 'Pagado', 'NC'])->nullable();
             $table->dateTime('payment_date')->nullable();
             $table->foreignId('admission_id')->constrained('admissions');
             $table->timestamps();
