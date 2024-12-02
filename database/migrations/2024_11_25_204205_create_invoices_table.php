@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('invoices', function (Blueprint $table) {
             $table->id();
             $table->string('number')->unique();
@@ -21,6 +22,7 @@ return new class extends Migration
             $table->foreignId('admission_id')->constrained('admissions');
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -28,6 +30,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('invoices');
+        Schema::enableForeignKeyConstraints();
     }
 };

@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('settlements', function (Blueprint $table) {
             $table->id();
             $table->foreignId('admission_id')->constrained('admissions');
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->string('period')->nullable();
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -38,6 +40,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('settlements');
+        Schema::enableForeignKeyConstraints();
     }
 };

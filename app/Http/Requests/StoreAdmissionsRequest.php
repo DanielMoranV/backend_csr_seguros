@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Classes\ApiResponseClass;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 
 class StoreAdmissionsRequest extends FormRequest
 {
@@ -24,13 +26,18 @@ class StoreAdmissionsRequest extends FormRequest
         return [
             '*.number' => 'required|string|max:10',
             '*.attendance_date' => 'required|date',
-            '*.type' => 'required|string|max:255',
-            '*.doctor' => 'string|max:255',
+            '*.type' => 'max:255',
+            '*.doctor' => 'max:255',
             '*.insurer_id' => 'exists:insurers,id',
-            '*.company' => 'string|max:255',
-            '*.amount' => 'numeric|min:0',
-            '*.patient' => 'string|max:255',
+            '*.company' => 'max:255',
+            '*.amount' => 'numeric',
+            '*.patient' => 'max:255',
             '*.medical_record_id' => 'exists:medical_records,id',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

@@ -19,4 +19,9 @@ class AdmissionRepository extends BaseRepository implements AdmissionRepositoryI
     {
         return $this->model->where('number', $number)->update($data);
     }
+
+    public function getExistingNumbers(array $numbers)
+    {
+        return $this->model::whereIn('number', $numbers)->pluck('number')->toArray();
+    }
 }

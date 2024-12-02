@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
             $table->dateTime('shipment_date');
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->text('remarks')->nullable();
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -26,6 +28,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('shipments');
+        Schema::enableForeignKeyConstraints();
     }
 };

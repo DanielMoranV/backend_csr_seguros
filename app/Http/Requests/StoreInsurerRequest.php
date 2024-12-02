@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests;
 
+use App\Classes\ApiResponseClass;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 
 class StoreInsurerRequest extends FormRequest
 {
@@ -26,5 +28,10 @@ class StoreInsurerRequest extends FormRequest
             'shipping_period' => 'string|max:255',
             'payment_period' => 'string|max:255',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

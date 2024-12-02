@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('medical_record_requests', function (Blueprint $table) {
             $table->id();
             $table->foreignId('requester_id')->constrained('users');
@@ -22,6 +23,7 @@ return new class extends Migration
             $table->enum('status', ['Atendido', 'Rechazado', 'Pendiente'])->default('Pendiente');
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -29,6 +31,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('medical_record_requests');
+        Schema::enableForeignKeyConstraints();
     }
 };

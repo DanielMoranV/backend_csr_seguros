@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 class MedicalRecordController extends Controller
 {
     protected $medicalRecordRepositoryInterface;
-    protected $relations = ['admissions', 'invoices', 'settlements'];
+    protected $relations = ['admissions', 'medicalRecordRequests'];
 
     public function __construct(MedicalRecordRepositoryInterface $medicalRecordRepositoryInterface)
     {
@@ -44,6 +44,7 @@ class MedicalRecordController extends Controller
             DB::commit();
             return ApiResponseClass::sendResponse(new MedicalRecordResource($medicalRecord), '', 200);
         } catch (\Exception $e) {
+
             DB::rollBack();
             return ApiResponseClass::rollback($e);
         }
@@ -78,16 +79,22 @@ class MedicalRecordController extends Controller
 
     public function storeMultiple(StoreMedicalRecordsRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $medicalRecord) {
+            foreach ($data as $medicalRecord) {
                 try {
-                    $this->medicalRecordRepositoryInterface->store($medicalRecord);
-                    $successfulRecords[] = $medicalRecord;
+                    $medicalRecord = [
+                        'number' => $medicalRecord['number'],
+                        'patient' => $medicalRecord['patient'] ?? null,
+                        'color' => $medicalRecord['color'] ?? null,
+                        'description' => $medicalRecord['description'] ?? null,
+                    ];
+                    $newMedicalRecord = $this->medicalRecordRepositoryInterface->store($medicalRecord);
+                    $successfulRecords[] = $newMedicalRecord;
                 } catch (\Exception $e) {
                     Log::error($e->getMessage());
                     $failedRecords[] = array_merge($medicalRecord, ['error' => $e->getMessage()]);
@@ -109,16 +116,16 @@ class MedicalRecordController extends Controller
 
     public function updateMultiple(UpdateMedicalRecordsRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $medicalRecord) {
+            foreach ($data as $medicalRecord) {
                 try {
-                    $this->medicalRecordRepositoryInterface->updateByNumber($medicalRecord['number'], $medicalRecord);
-                    $successfulRecords[] = $medicalRecord;
+                    $updatedMedicalRecord = $this->medicalRecordRepositoryInterface->updateByNumber($medicalRecord['number'], $medicalRecord);
+                    $successfulRecords[] = $updatedMedicalRecord;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($medicalRecord, ['error' => $e->getMessage()]);
                 }

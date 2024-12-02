@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class InsurerController extends Controller
 {
     protected $insurerRepositoryInterface;
-    protected $relations = ['invoices', 'settlements', 'medical_record_requests'];
+    protected $relations = ['admissions'];
 
     public function __construct(InsurerRepositoryInterface $insurerRepositoryInterface)
     {
@@ -70,16 +70,21 @@ class InsurerController extends Controller
 
     public function storeMultiple(StoreInsurersRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $insurer) {
+            foreach ($data as $insurer) {
                 try {
-                    $this->insurerRepositoryInterface->store($insurer);
-                    $successfulRecords[] = $insurer;
+                    $insurer = [
+                        'name' => $insurer['name'],
+                        'shipping_period' => $insurer['shipping_period'] ?? null,
+                        'payment_period' => $insurer['payment_period'] ?? null,
+                    ];
+                    $newInsurer = $this->insurerRepositoryInterface->store($insurer);
+                    $successfulRecords[] = $newInsurer;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($insurer, ['error' => $e->getMessage()]);
                 }
@@ -98,16 +103,16 @@ class InsurerController extends Controller
     }
     public function updateMultiple(UpdateInsurersRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $insurer) {
+            foreach ($data as $insurer) {
                 try {
-                    $this->insurerRepositoryInterface->updateByName($insurer['name'], $insurer);
-                    $successfulRecords[] = $insurer;
+                    $updatedInsurer = $this->insurerRepositoryInterface->updateByName($insurer['name'], $insurer);
+                    $successfulRecords[] = $updatedInsurer;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($insurer, ['error' => $e->getMessage()]);
                 }

@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Classes\ApiResponseClass;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -50,6 +49,6 @@ class UpdateUserRequest extends FormRequest
 
     public function failedValidation(Validator $validator)
     {
-        ApiResponseClass::validationError($validator);
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

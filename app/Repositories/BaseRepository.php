@@ -50,4 +50,16 @@ class BaseRepository implements BaseRepositoryInterface
         $response = $this->model::onlyTrashed()->find($id);
         return $response->restore(); // Restaura registro eliminado
     }
+    public function bulkStore(array $data)
+    {
+        return $this->model::insert($data); // Retorna true/false
+    }
+
+    public function getPaginated($relations = [], $perPage = 10)
+    {
+        if (!empty($relations)) {
+            return $this->model::with($relations)->paginate($perPage);
+        }
+        return $this->model::paginate($perPage);
+    }
 }

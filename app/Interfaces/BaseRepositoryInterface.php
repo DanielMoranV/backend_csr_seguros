@@ -10,4 +10,6 @@ interface BaseRepositoryInterface
     public function update(array $data, $id);
     public function delete($id);
     public function restore($id);
+    public function bulkStore(array $data);
+    public function getPaginated($relations = [], $perPage = 10);
 }

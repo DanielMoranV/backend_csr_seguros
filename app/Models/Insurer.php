@@ -15,21 +15,9 @@ class Insurer extends Model
         'payment_period',
     ];
 
-    // Relación con las facturas
-    public function invoices()
+    // Relación con las admisiones
+    public function admissions()
     {
-        return $this->hasMany(Invoice::class);
-    }
-
-    // Relación con las liquidaciones
-    public function settlements()
-    {
-        return $this->hasMany(Settlement::class);
-    }
-
-    // Relación con las solicitudes de historias clínicas
-    public function medicalRecordRequests()
-    {
-        return $this->hasMany(MedicalRecordRequest::class);
+        return $this->hasMany(Admission::class);
     }
 }

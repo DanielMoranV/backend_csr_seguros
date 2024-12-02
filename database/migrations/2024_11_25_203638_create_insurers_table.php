@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('insurers', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique();
@@ -18,6 +19,7 @@ return new class extends Migration
             $table->integer('payment_period')->nullable(); // Periodo de pago en días
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -25,6 +27,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('insurers');
+        Schema::enableForeignKeyConstraints();
     }
 };

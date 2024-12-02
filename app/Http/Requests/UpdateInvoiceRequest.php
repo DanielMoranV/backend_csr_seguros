@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use App\Classes\ApiResponseClass;
 
 class UpdateInvoiceRequest extends FormRequest
 {
@@ -28,5 +30,10 @@ class UpdateInvoiceRequest extends FormRequest
             'amount' => 'numeric|min:0',
             'admission_id' => 'exists:admissions,id',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

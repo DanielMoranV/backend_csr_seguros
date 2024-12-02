@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use App\Classes\ApiResponseClass;
 
 class UpdateInvoicesRequest extends FormRequest
 {
@@ -24,9 +26,14 @@ class UpdateInvoicesRequest extends FormRequest
         return [
             '*.issue_date' => 'date',
             '*.status' => 'string|max:255',
-            '*.payment_date' => 'date',
+            '*.payment_date' => 'nullable|date',
             '*.amount' => 'numeric|min:0',
             '*.admission_id' => 'exists:admissions,id',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

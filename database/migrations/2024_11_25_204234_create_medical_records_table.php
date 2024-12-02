@@ -11,14 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('medical_records', function (Blueprint $table) {
             $table->id();
-            $table->integer('number')->unique();
+            $table->string('number')->unique();
             $table->string('patient')->nullable();
             $table->string('color')->nullable();
             $table->string('description')->nullable();
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -26,6 +28,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('medical_records');
+        Schema::enableForeignKeyConstraints();
     }
 };

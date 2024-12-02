@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Classes\ApiResponseClass;
 use Illuminate\Foundation\Http\FormRequest;
+
+use Illuminate\Contracts\Validation\Validator;
 
 class StoreInvoicesRequest extends FormRequest
 {
@@ -22,12 +25,17 @@ class StoreInvoicesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            '*.number' => 'required|string|max:10',
+            '*.number' => 'required|string|max:15',
             '*.issue_date' => 'required|date',
-            '*.status' => 'required|string|max:255',
-            '*.payment_date' => 'required|date',
+            '*.status' => 'string|max:255',
+            '*.payment_date' => 'nullable|date',
             '*.amount' => 'required|numeric|min:0',
             '*.admission_id' => 'required|exists:admissions,id',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

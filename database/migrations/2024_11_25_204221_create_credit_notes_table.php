@@ -11,6 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::create('credit_notes', function (Blueprint $table) {
             $table->id();
             $table->dateTime('date');
@@ -19,6 +20,7 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->timestamps();
         });
+        Schema::enableForeignKeyConstraints();
     }
 
     /**
@@ -26,6 +28,8 @@ return new class extends Migration
      */
     public function down(): void
     {
+        Schema::disableForeignKeyConstraints();
         Schema::dropIfExists('credit_notes');
+        Schema::enableForeignKeyConstraints();
     }
 };

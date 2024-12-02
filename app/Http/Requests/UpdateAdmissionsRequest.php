@@ -3,6 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
+use App\Classes\ApiResponseClass;
 
 class UpdateAdmissionsRequest extends FormRequest
 {
@@ -27,9 +29,14 @@ class UpdateAdmissionsRequest extends FormRequest
             '*.doctor' => 'string|max:255',
             '*.insurer_id' => 'exists:insurers,id',
             '*.company' => 'string|max:255',
-            '*.amount' => 'numeric|min:0',
+            '*.amount' => 'numeric',
             '*.patient' => 'string|max:255',
             '*.medical_record_id' => 'exists:medical_records,id',
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

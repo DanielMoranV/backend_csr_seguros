@@ -11,6 +11,7 @@ use App\Http\Resources\InvoiceResource;
 use App\Interfaces\InvoiceRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class InvoiceController extends Controller
 {
@@ -77,16 +78,24 @@ class InvoiceController extends Controller
 
     public function storeMultiple(StoreInvoicesRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $invoice) {
+            foreach ($data as $invoice) {
                 try {
-                    $this->invoiceRepositoryInterface->store($invoice);
-                    $successfulRecords[] = $invoice;
+                    $invoice = [
+                        'number' => $invoice['number'],
+                        'issue_date' => $invoice['issue_date'] ?? null,
+                        'status' => $invoice['status'] ?? null,
+                        'payment_date' => $invoice['payment_date'] ?? null,
+                        'amount' => $invoice['amount'] ?? null,
+                        'admission_id' => $invoice['admission_id'] ?? null,
+                    ];
+                    $newInvoice = $this->invoiceRepositoryInterface->store($invoice);
+                    $successfulRecords[] = $newInvoice;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($invoice, ['error' => $e->getMessage()]);
                 }
@@ -99,6 +108,7 @@ class InvoiceController extends Controller
             ];
             return ApiResponseClass::sendResponse($response, '', 200);
         } catch (\Exception $e) {
+            Log::warning('Error storing invoices', ['error' => $e->getMessage()]);
             DB::rollBack();
             return ApiResponseClass::rollback($e);
         }
@@ -106,16 +116,23 @@ class InvoiceController extends Controller
 
     public function updateMultiple(UpdateInvoicesRequest $request)
     {
-        $validated = $request->validated();
+        $data = $request->all();
         $successfulRecords = [];
         $failedRecords = [];
 
         DB::beginTransaction();
         try {
-            foreach ($validated as $invoice) {
+            foreach ($data as $invoice) {
                 try {
-                    $this->invoiceRepositoryInterface->updateByNumber($invoice['number'], $invoice);
-                    $successfulRecords[] = $invoice;
+                    $invoice = [
+                        'number' => $invoice['number'],
+                        'issue_date' => $invoice['issue_date'] ?? null,
+                        'status' => $invoice['status'] ?? null,
+                        'payment_date' => $invoice['payment_date'] ?? null,
+                        'amount' => $invoice['amount'] ?? null,
+                    ];
+                    $updatedInvoice = $this->invoiceRepositoryInterface->updateByNumber($invoice['number'], $invoice);
+                    $successfulRecords[] = $updatedInvoice;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($invoice, ['error' => $e->getMessage()]);
                 }

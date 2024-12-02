@@ -61,16 +61,17 @@ class ApiResponseClass
         ], $code);
     }
 
-    public static function validationError($validator)
+    public static function validationError($validator, $data)
     {
         // Información adicional de validación fallida
         $errors = $validator->errors();
-        Log::warning('Validation errors occurred', ['errors' => $errors]);
+        Log::warning('Validation errors occurred', ['errors' => $errors, 'data' => $data]);
 
         throw new HttpResponseException(response()->json([
             'success' => false,
             'message' => 'Validation errors',
             'errors' => $errors,
+            'data' => $data,
         ], 422));
     }
 }
