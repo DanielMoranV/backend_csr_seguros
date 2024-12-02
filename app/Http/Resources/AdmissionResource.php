@@ -18,6 +18,7 @@ class AdmissionResource extends JsonResource
             'id' => $this->id,
             'number' => $this->number,
             'attendance_date' => $this->attendance_date,
+            'attendance_hour' => $this->attendance_hour,
             'type' => $this->type,
             'doctor' => $this->doctor,
             'amount' => $this->amount,

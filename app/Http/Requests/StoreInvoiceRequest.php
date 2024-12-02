@@ -26,6 +26,7 @@ class StoreInvoiceRequest extends FormRequest
         return [
             'number' => 'required|string|max:10',
             'issue_date' => 'required|date',
+            'biller' => 'required|string|max:255',
             'status' => 'required|string|max:255',
             'payment_date' => 'required|date',
             'amount' => 'required|numeric|min:0',

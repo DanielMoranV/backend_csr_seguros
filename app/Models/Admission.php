@@ -12,6 +12,7 @@ class Admission extends Model
     protected $fillable = [
         'number',
         'attendance_date',
+        'attendance_hour',
         'type',
         'doctor',
         'insurer_id',

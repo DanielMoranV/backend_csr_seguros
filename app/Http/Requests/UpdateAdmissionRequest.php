@@ -25,6 +25,7 @@ class UpdateAdmissionRequest extends FormRequest
     {
         return [
             'attendance_date' => 'date',
+            'attendance_hour' => 'date',
             'type' => 'string|max:255',
             'doctor' => 'string|max:255',
             'insurer_id' => 'exists:insurers,id',

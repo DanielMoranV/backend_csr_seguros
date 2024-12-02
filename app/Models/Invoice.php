@@ -13,6 +13,7 @@ class Invoice extends Model
         'number',
         'issue_date',
         'status',
+        'biller',
         'payment_date',
         'amount',
         'admission_id',

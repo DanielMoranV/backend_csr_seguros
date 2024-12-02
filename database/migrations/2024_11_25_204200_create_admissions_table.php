@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('number')->unique();
             $table->dateTime('attendance_date');
+            $table->time('attendance_hour')->nullable();
             $table->string('type')->nullable();
             $table->string('doctor')->nullable();
             $table->decimal('amount', 10, 2)->nullable();

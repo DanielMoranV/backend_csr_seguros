@@ -16,6 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('number')->unique();
             $table->dateTime('issue_date');
+            $table->string('biller')->nullable(); // Nombre del facturador
             $table->decimal('amount', 10, 2);
             $table->enum('status', ['Pendiente', 'Pagado', 'NC'])->nullable();
             $table->dateTime('payment_date')->nullable();

@@ -94,6 +94,7 @@ class AdmissionController extends Controller
                         $validatedAdmission = [
                             'number' => $admission['number'],
                             'attendance_date' => $admission['attendance_date'] ?? null,
+                            'attendance_hour' => $admission['attendance_hour'] ?? null,
                             'type' => $admission['type'] ?? null,
                             'doctor' => $admission['doctor'] ?? null,
                             'insurer_id' => $admission['insurer_id'] ?? null,
@@ -152,6 +153,7 @@ class AdmissionController extends Controller
                     // Preparar los datos para actualizar
                     $updateData = [
                         'attendance_date' => $admission['attendance_date'] ?? null,
+                        'attendance_hour' => $admission['attendance_hour'] ?? null,
                         'type' => $admission['type'] ?? null,
                         'doctor' => $admission['doctor'] ?? null,
                         'insurer_id' => $admission['insurer_id'] ?? null,

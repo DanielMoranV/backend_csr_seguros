@@ -26,6 +26,7 @@ class UpdateInvoicesRequest extends FormRequest
         return [
             '*.issue_date' => 'date',
             '*.status' => 'string|max:255',
+            '*.biller' => 'string|max:255',
             '*.payment_date' => 'nullable|date',
             '*.amount' => 'numeric|min:0',
             '*.admission_id' => 'exists:admissions,id',

@@ -93,6 +93,7 @@ class InvoiceController extends Controller
                         'payment_date' => $invoice['payment_date'] ?? null,
                         'amount' => $invoice['amount'] ?? null,
                         'admission_id' => $invoice['admission_id'] ?? null,
+                        'biller' => $invoice['biller'] ?? null,
                     ];
                     $newInvoice = $this->invoiceRepositoryInterface->store($invoice);
                     $successfulRecords[] = $newInvoice;
@@ -130,6 +131,7 @@ class InvoiceController extends Controller
                         'status' => $invoice['status'] ?? null,
                         'payment_date' => $invoice['payment_date'] ?? null,
                         'amount' => $invoice['amount'] ?? null,
+                        'biller' => $invoice['biller'] ?? null,
                     ];
                     $updatedInvoice = $this->invoiceRepositoryInterface->updateByNumber($invoice['number'], $invoice);
                     $successfulRecords[] = $updatedInvoice;

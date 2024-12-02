@@ -26,6 +26,7 @@ class StoreAdmissionRequest extends FormRequest
         return [
             'number' => 'required|string|max:10',
             'attendance_date' => 'required|date',
+            'attendance_hour' => 'required|date',
             'type' => 'required|string|max:255',
             'doctor' => 'string|max:255',
             'insurer_id' => 'exists:insurers,id',
