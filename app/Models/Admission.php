@@ -16,6 +16,7 @@ class Admission extends Model
         'type',
         'doctor',
         'insurer_id',
+        'status',
         'company',
         'amount',
         'patient',

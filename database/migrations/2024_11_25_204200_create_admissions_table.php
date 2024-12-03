@@ -22,7 +22,7 @@ return new class extends Migration
             $table->decimal('amount', 10, 2)->nullable();
             $table->foreignId('insurer_id')->constrained('insurers')->nullable();
             $table->string('company')->nullable();
-            $table->enum('status', ['Pendiente', 'Liquidado', 'Anulado'])->nullable();
+            $table->enum('status', ['Pendiente', 'Liquidado', 'Pagado', 'Anulado'])->default('Pendiente');
             $table->string('patient')->nullable();
             $table->foreignId('medical_record_id')->constrained('medical_records')->nullable();
             $table->timestamps();
