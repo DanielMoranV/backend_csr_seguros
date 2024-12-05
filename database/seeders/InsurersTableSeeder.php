@@ -34,6 +34,7 @@ class InsurersTableSeeder extends Seeder
             ["id" => 18, "name" => "RIMAC SEGUROS Y REASEGUROS - ST", "shipping_period" => 90],
             ["id" => 19, "name" => "HEALTH CARE ADMINISTRATION RED SALUD S.A.C.", "shipping_period" => 45],
             ["id" => 20, "name" => "PROTECTA SECURITY ACCIDENTES PERSONALES", "shipping_period" => 45],
+            ["id" => 21, "name" => "PACIENTES PARTICULARES", "shipping_period" => 0]
         ];
 
         DB::table('insurers')->insert($insurers);

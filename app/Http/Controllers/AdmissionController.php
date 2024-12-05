@@ -78,21 +78,104 @@ class AdmissionController extends Controller
     public function storeMultiple(StoreAdmissionsRequest $request)
     {
         $data = $request->all();
+        $batchSize = 500; // Tamaño del bloque
 
         $successfulRecords = [];
         $failedRecords = [];
-        $batchSize = 500; // Tamaño del bloque
         $dataChunks = array_chunk($data, $batchSize);
 
         DB::beginTransaction();
         try {
             foreach ($dataChunks as $chunk) {
-                $validAdmissions = [];
+                $validAdmissions = $this->prepareAdmissions($chunk, $failedRecords);
+
+                // Inserción masiva utilizando Query Builder
+                if (!empty($validAdmissions)) {
+                    DB::table('admissions')->insert($validAdmissions); // Asume que la tabla se llama 'admissions'
+                    $successfulRecords = [...$successfulRecords, ...$validAdmissions];
+                }
+            }
+            DB::commit();
+
+            return ApiResponseClass::sendResponse(
+                [
+                    'success' => $successfulRecords,
+                    'errors' => $failedRecords,
+                    'message' => 'Processing complete',
+                ],
+                'Records processed successfully',
+                200
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    /**
+     * Prepara los datos para ser insertados y captura errores.
+     *
+     * @param array $chunk
+     * @param array &$failedRecords
+     * @return array
+     */
+    private function prepareAdmissions(array $chunk, array &$failedRecords): array
+    {
+        $validAdmissions = [];
+        foreach ($chunk as $admission) {
+            try {
+                $validatedAdmission = [
+                    'number' => $admission['number'],
+                    'attendance_date' => $admission['attendance_date'] ?? null,
+                    'attendance_hour' => $admission['attendance_hour'] ?? null,
+                    'type' => $admission['type'] ?? null,
+                    'doctor' => $admission['doctor'] ?? null,
+                    'status' => $admission['status'] ?? null,
+                    'insurer_id' => $admission['insurer_id'] ?? null,
+                    'company' => $admission['company'] ?? null,
+                    'amount' => $admission['amount'] ?? null,
+                    'patient' => $admission['patient'] ?? null,
+                    'medical_record_id' => $admission['medical_record_id'] ?? null,
+                    'created_at' => now(), // Asegúrate de manejar timestamps si es necesario
+                    'updated_at' => now(),
+                ];
+                $validAdmissions[] = $validatedAdmission;
+            } catch (\Exception $e) {
+                $failedRecords[] = array_merge($admission, ['error' => $e->getMessage()]);
+            }
+        }
+        return $validAdmissions;
+    }
+
+
+    public function updateMultiple(UpdateAdmissionRequest $request)
+    {
+        $data = $request->all();
+
+        $successfulRecords = [];
+        $failedRecords = [];
+        $batchSize = 500; // Tamaño del bloque
+
+        DB::beginTransaction();
+        try {
+            // Obtener todos los números existentes en una sola consulta
+            $numbers = collect($data)->pluck('number')->toArray();
+            $existingNumbers = $this->admissionRepositoryInterface->getExistingNumbers($numbers);
+            $existingNumbers = collect($existingNumbers)->flip(); // Para búsquedas rápidas
+
+            // Dividir los datos en bloques para mayor eficiencia
+            $dataChunks = array_chunk($data, $batchSize);
+
+            foreach ($dataChunks as $chunk) {
                 foreach ($chunk as $admission) {
                     try {
-                        // Validar y preparar los datos
-                        $validatedAdmission = [
-                            'number' => $admission['number'],
+                        // Validar que el número exista antes de actualizar
+                        if (!isset($existingNumbers[$admission['number']])) {
+                            throw new \Exception("Número {$admission['number']} no encontrado");
+                        }
+
+                        // Preparar los datos para actualizar
+                        $updateData = [
                             'attendance_date' => $admission['attendance_date'] ?? null,
                             'attendance_hour' => $admission['attendance_hour'] ?? null,
                             'type' => $admission['type'] ?? null,
@@ -103,83 +186,35 @@ class AdmissionController extends Controller
                             'amount' => $admission['amount'] ?? null,
                             'patient' => $admission['patient'] ?? null,
                             'medical_record_id' => $admission['medical_record_id'] ?? null,
+                            'updated_at' => now(),
                         ];
-                        $validAdmissions[] = $validatedAdmission;
+
+                        // Actualización directa usando Query Builder
+                        DB::table('admissions')
+                            ->where('number', $admission['number'])
+                            ->update($updateData);
+
+                        $successfulRecords[] = [
+                            'number' => $admission['number'],
+                            'updated_data' => $updateData,
+                        ];
                     } catch (\Exception $e) {
                         $failedRecords[] = array_merge($admission, ['error' => $e->getMessage()]);
                     }
                 }
-
-                // Inserción masiva de los registros válidos
-                if (!empty($validAdmissions)) {
-                    $this->admissionRepositoryInterface->bulkStore($validAdmissions);
-                    $successfulRecords = array_merge($successfulRecords, $validAdmissions);
-                }
-            }
-            DB::commit();
-
-            $response = [
-                'success' => $successfulRecords,
-                'errors' => $failedRecords,
-                'message' => 'Processing complete',
-            ];
-            return ApiResponseClass::sendResponse($response, 'Records processed successfully', 200);
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return ApiResponseClass::rollback($e);
-        }
-    }
-
-
-    public function updateMultiple(UpdateAdmissionRequest $request)
-    {
-        $data = $request->all();
-
-        $successfulRecords = [];
-        $failedRecords = [];
-
-        DB::beginTransaction();
-        try {
-            // Validar que todos los números existen en la base de datos
-            $numbers = collect($data)->pluck('number')->toArray();
-            $existingNumbers = $this->admissionRepositoryInterface->getExistingNumbers($numbers);
-
-            foreach ($data as $admission) {
-                try {
-                    // Validar que el número exista antes de actualizar
-                    if (!in_array($admission['number'], $existingNumbers)) {
-                        throw new \Exception("Número {$admission['number']} no encontrado");
-                    }
-
-                    // Preparar los datos para actualizar
-                    $updateData = [
-                        'attendance_date' => $admission['attendance_date'] ?? null,
-                        'attendance_hour' => $admission['attendance_hour'] ?? null,
-                        'type' => $admission['type'] ?? null,
-                        'doctor' => $admission['doctor'] ?? null,
-                        'status' => $admission['status'] ?? null,
-                        'insurer_id' => $admission['insurer_id'] ?? null,
-                        'company' => $admission['company'] ?? null,
-                        'amount' => $admission['amount'] ?? null,
-                        'patient' => $admission['patient'] ?? null,
-                        'medical_record_id' => $admission['medical_record_id'] ?? null,
-                    ];
-
-                    $updatedAdmission = $this->admissionRepositoryInterface->updateByNumber($admission['number'], $updateData);
-                    $successfulRecords[] = $updatedAdmission;
-                } catch (\Exception $e) {
-                    $failedRecords[] = array_merge($admission, ['error' => $e->getMessage()]);
-                }
             }
 
             DB::commit();
 
-            $response = [
-                'success' => $successfulRecords,
-                'errors' => $failedRecords,
-                'message' => 'Processing complete'
-            ];
-            return ApiResponseClass::sendResponse($response, 'Records processed successfully', 200);
+            return ApiResponseClass::sendResponse(
+                [
+                    'success' => $successfulRecords,
+                    'errors' => $failedRecords,
+                    'message' => 'Processing complete',
+                ],
+                'Records processed successfully',
+                200
+            );
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponseClass::rollback($e);
