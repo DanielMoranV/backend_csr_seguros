@@ -10,10 +10,17 @@ class Shipment extends Model
     protected $table = 'shipments';
 
     protected $fillable = [
-        'shipment_date',
-        'reception_date',
-        'invoice_id',
-        'remarks',
+        'verified_shipment', // Verificado por el envío
+        'shipment_date', // Fecha de envío
+        'reception_date', // Fecha de recepción
+        'invoice_id', // ID de la factura
+        'remarks', // Observaciones
+        'trama_verified', // Verificado por trama
+        'trama_date', // Fecha de verificación por trama
+        'courier_verified', // Verificado por courier
+        'courier_date', // Fecha de verificación por courier
+        'email_verified', // Verificado por email
+        'email_verified_date', // Fecha de verificación por email
     ];
 
     // Relación con la factura
