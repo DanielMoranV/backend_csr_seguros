@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\DB;
 class DevolutionController extends Controller
 {
     protected $devolutionRepositoryInterface;
-    protected $relations = ['invoice', 'admission'];
+    protected $relations = ['invoice', 'admission.insurer'];
 
     public function __construct(DevolutionRepositoryInterface $devolutionRepositoryInterface)
     {
@@ -80,9 +80,10 @@ class DevolutionController extends Controller
                 try {
                     $devolution = [
                         'date' => $devolution['date'],
-                        'invoice_id' => $devolution['invoice_id'],
+                        'invoice_id' => $devolution['invoice_id'] ?? null,
                         'type' => $devolution['type'],
                         'reason' => $devolution['reason'],
+                        'status' => $devolution['status'],
                         'period' => $devolution['period'],
                         'biller' => $devolution['biller'],
                         'admission_id' => $devolution['admission_id'],
@@ -117,14 +118,15 @@ class DevolutionController extends Controller
                 try {
                     $updatedDevolution = [
                         'date' => $devolution['date'],
-                        'invoice_id' => $devolution['invoice_id'],
+                        'invoice_id' => $devolution['invoice_id'] ?? null,
                         'type' => $devolution['type'],
                         'reason' => $devolution['reason'],
                         'period' => $devolution['period'],
                         'biller' => $devolution['biller'],
+                        'status' => $devolution['status'] ?? null,
                         'admission_id' => $devolution['admission_id'],
                     ];
-                    $updatedDevolution = $this->devolutionRepositoryInterface->update($updatedDevolution, $devolution['id']);
+                    $updatedDevolution = $this->devolutionRepositoryInterface->updateByInvoiceId($updatedDevolution, $devolution['invoice_id']);
                     $successfulRecords[] = $updatedDevolution;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($devolution, ['error' => $e->getMessage()]);

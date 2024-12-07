@@ -27,8 +27,10 @@ class AdmissionResource extends JsonResource
             'status' => $this->status,
             'patient' => $this->patient,
             'medical_record_id' => $this->medical_record_id,
+
             'last_invoice_number' => $this->invoices()->latest()->first()?->number,
             'last_invoice_biller' => $this->invoices()->latest()->first()?->biller,
+
             'insurer' => $this->whenLoaded('insurer', function () {
                 return new InsurerResource($this->insurer);
             }),
@@ -38,6 +40,12 @@ class AdmissionResource extends JsonResource
             'invoices' => $this->whenLoaded('invoices', function () {
                 return InvoiceResource::collection($this->invoices);
             }),
+            'devolutions' => $this->whenLoaded('devolutions', function () {
+                return $this->devolutions->isEmpty()
+                    ? null
+                    : DevolutionResource::collection($this->devolutions);
+            }),
+            'is_devolution' => !$this->devolutions->isEmpty(),
         ];
     }
 }

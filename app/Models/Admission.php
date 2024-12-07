@@ -23,6 +23,7 @@ class Admission extends Model
         'medical_record_id',
     ];
 
+
     // Relación con la historia clínica
     public function medicalRecord()
     {
@@ -45,5 +46,11 @@ class Admission extends Model
     public function settlements()
     {
         return $this->hasMany(Settlement::class);
+    }
+
+    // Relación con las devoluciones
+    public function devolutions()
+    {
+        return $this->hasMany(Devolution::class);
     }
 }

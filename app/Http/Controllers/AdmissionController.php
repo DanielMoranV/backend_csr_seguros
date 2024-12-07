@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Log;
 class AdmissionController extends Controller
 {
     protected $admissionRepositoryInterface;
-    protected $relations = ['insurer', 'invoices', 'settlements'];
+    protected $relations = ['insurer', 'invoices', 'settlements', 'devolutions'];
 
     public function __construct(AdmissionRepositoryInterface $admissionRepositoryInterface)
     {

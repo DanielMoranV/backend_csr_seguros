@@ -11,7 +11,7 @@ class StoreDevolutionsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -23,7 +23,7 @@ class StoreDevolutionsRequest extends FormRequest
     {
         return [
             '*.date' => 'required|date',
-            '*.invoice_id' => 'nullable|exists:invoices,id',
+            '*.invoice_id' => 'nullable',
             '*.type' => 'required|string',
             '*.reason' => 'required|string',
             '*.period' => 'required|string',

@@ -15,7 +15,7 @@ return new class extends Migration
         Schema::create('devolutions', function (Blueprint $table) {
             $table->id();
             $table->dateTime('date');
-            $table->foreignId('invoice_id')->constrained('invoices');
+            $table->foreignId('invoice_id')->constrained('invoices')->nullable();
             $table->string('type');
             $table->text('reason');
             $table->string('period');

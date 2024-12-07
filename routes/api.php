@@ -83,6 +83,7 @@ Route::group([
     'middleware' => ['auth:api', 'role:dev|admin'],
     'prefix' => 'devolutions'
 ], function () {
+    Route::post('/store', [DevolutionController::class, 'storeMultiple'])->name('devolutions.storeMultiple');
     Route::patch('/update', [DevolutionController::class, 'updateMultiple'])->name('devolutions.updateMultiple');
 });
 Route::apiResource('devolutions', DevolutionController::class)->middleware('role:dev|admin');
