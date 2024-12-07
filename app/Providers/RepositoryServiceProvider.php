@@ -13,6 +13,8 @@ use App\Interfaces\InsurerRepositoryInterface;
 use App\Repositories\InsurerRepository;
 use App\Interfaces\MedicalRecordRepositoryInterface;
 use App\Repositories\MedicalRecordRepository;
+use App\Interfaces\DevolutionRepositoryInterface;
+use App\Repositories\DevolutionRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -26,6 +28,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(InvoiceRepositoryInterface::class, InvoiceRepository::class);
         $this->app->bind(InsurerRepositoryInterface::class, InsurerRepository::class);
         $this->app->bind(MedicalRecordRepositoryInterface::class, MedicalRecordRepository::class);
+        $this->app->bind(DevolutionRepositoryInterface::class, DevolutionRepository::class);
     }
 
     /**

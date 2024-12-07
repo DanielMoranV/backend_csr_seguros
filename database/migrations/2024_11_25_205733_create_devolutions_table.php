@@ -20,7 +20,7 @@ return new class extends Migration
             $table->text('reason');
             $table->string('period');
             $table->string('biller');
-            $table->string('status');
+            $table->string('status')->default('Pendiente');
             $table->foreignId('admission_id')->constrained('admissions');
             $table->timestamps();
         });

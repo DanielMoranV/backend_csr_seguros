@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InsurerController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\AdmissionController;
+use App\Http\Controllers\DevolutionController;
 use App\Http\Controllers\InvoiceController;
 
 // Authentication Routes
@@ -76,3 +77,12 @@ Route::group([
     Route::patch('/update', [InvoiceController::class, 'updateMultiple'])->name('invoices.updateMultiple');
 });
 Route::apiResource('invoices', InvoiceController::class)->middleware('role:dev|admin');
+
+// Devolution Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'devolutions'
+], function () {
+    Route::patch('/update', [DevolutionController::class, 'updateMultiple'])->name('devolutions.updateMultiple');
+});
+Route::apiResource('devolutions', DevolutionController::class)->middleware('role:dev|admin');
