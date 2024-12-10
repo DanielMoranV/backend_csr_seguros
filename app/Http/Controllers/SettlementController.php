@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class SettlementController extends Controller
 {
     protected $settlementRepositoryInterface;
-    protected $relations = ['invoice'];
+    protected $relations = ['invoice', 'admission'];
 
     public function __construct(SettlementRepositoryInterface $settlementRepositoryInterface)
     {

@@ -14,6 +14,7 @@ class SettlementResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+
         return [
             'id' => $this->id,
             'admission_id' => $this->admission_id,
@@ -33,6 +34,7 @@ class SettlementResource extends JsonResource
             'status' => $this->status,
             'period' => $this->period,
             'invoice' => $this->whenLoaded('invoice', fn() => new InvoiceResource($this->invoice)),
+            'admission' => $this->whenLoaded('admission', fn() => new AdmissionResource($this->admission)),
         ];
     }
 }
