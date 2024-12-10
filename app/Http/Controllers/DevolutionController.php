@@ -11,6 +11,7 @@ use App\Http\Resources\DevolutionResource;
 use App\Interfaces\DevolutionRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class DevolutionController extends Controller
 {
@@ -24,8 +25,13 @@ class DevolutionController extends Controller
 
     public function index()
     {
-        $data = $this->devolutionRepositoryInterface->getAll($this->relations);
-        return ApiResponseClass::sendResponse(DevolutionResource::collection($data), '', 200);
+        try {
+            $data = $this->devolutionRepositoryInterface->getAll($this->relations);
+            return ApiResponseClass::sendResponse(DevolutionResource::collection($data), '', 200);
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return ApiResponseClass::rollback($e);
+        }
     }
 
     public function store(StoreDevolutionRequest $request)
@@ -116,16 +122,12 @@ class DevolutionController extends Controller
         try {
             foreach ($data as $devolution) {
                 try {
-                    $updatedDevolution = [
-                        'date' => $devolution['date'],
-                        'invoice_id' => $devolution['invoice_id'] ?? null,
-                        'type' => $devolution['type'],
-                        'reason' => $devolution['reason'],
-                        'period' => $devolution['period'],
-                        'biller' => $devolution['biller'],
-                        'status' => $devolution['status'] ?? null,
-                        'admission_id' => $devolution['admission_id'],
-                    ];
+                    $fields = ['date', 'invoice_id', 'type', 'reason', 'period', 'biller', 'status', 'admission_id'];
+
+                    $updatedDevolution = array_filter(
+                        array_intersect_key($devolution, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
                     $updatedDevolution = $this->devolutionRepositoryInterface->updateByInvoiceId($updatedDevolution, $devolution['invoice_id']);
                     $successfulRecords[] = $updatedDevolution;
                 } catch (\Exception $e) {

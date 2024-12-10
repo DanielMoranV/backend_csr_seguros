@@ -24,12 +24,12 @@ class UpdateInvoicesRequest extends FormRequest
     public function rules(): array
     {
         return [
-            '*.issue_date' => 'date',
-            '*.status' => 'string|max:255',
-            '*.biller' => 'string|max:255',
+            '*.issue_date' => 'nullable|date',
+            '*.status' => 'nullable|string|max:255',
+            '*.biller' => 'nullable|string|max:255',
             '*.payment_date' => 'nullable|date',
-            '*.amount' => 'numeric|min:0',
-            '*.admission_id' => 'exists:admissions,id',
+            '*.amount' => 'nullable|numeric|min:0',
+            '*.admission_id' => 'nullable|exists:admissions,id',
         ];
     }
 

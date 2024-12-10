@@ -124,6 +124,11 @@ class MedicalRecordController extends Controller
         try {
             foreach ($data as $medicalRecord) {
                 try {
+                    $fields = ['number', 'patient', 'color', 'description'];
+                    $medicalRecord = array_filter(
+                        array_intersect_key($medicalRecord, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
                     $updatedMedicalRecord = $this->medicalRecordRepositoryInterface->updateByNumber($medicalRecord['number'], $medicalRecord);
                     $successfulRecords[] = $updatedMedicalRecord;
                 } catch (\Exception $e) {

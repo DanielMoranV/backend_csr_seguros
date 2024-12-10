@@ -18,6 +18,7 @@ class Devolution extends Model
         'biller',
         'status',
         'admission_id',
+        'audit_id',
     ];
 
     // Relación con la admisión
@@ -30,5 +31,11 @@ class Devolution extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    // Relación con el auditor
+    public function audit()
+    {
+        return $this->belongsTo(Audit::class);
     }
 }

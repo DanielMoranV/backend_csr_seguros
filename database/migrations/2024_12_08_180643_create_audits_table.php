@@ -12,17 +12,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::create('devolutions', function (Blueprint $table) {
+        Schema::create('audits', function (Blueprint $table) {
             $table->id();
-            $table->dateTime('date');
-            $table->foreignId('invoice_id')->nullable()->constrained('invoices');
-            $table->string('type');
-            $table->text('reason');
-            $table->string('period');
-            $table->string('biller');
-            $table->string('status')->default('Pendiente');
-            $table->foreignId('admission_id')->nullable()->constrained('admissions');
-            $table->foreignId('audit_id')->nullable()->constrained('audits');
+            $table->string('name');
+            $table->string('description');
+            $table->enum('status', ['Aprobado', 'Con Observaciones', 'Rechazado', 'Pendiente'])->default('Pendiente');
             $table->timestamps();
         });
         Schema::enableForeignKeyConstraints();
@@ -34,7 +28,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::disableForeignKeyConstraints();
-        Schema::dropIfExists('devolutions');
+        Schema::dropIfExists('audits');
         Schema::enableForeignKeyConstraints();
     }
 };

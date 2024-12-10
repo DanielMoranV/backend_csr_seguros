@@ -8,6 +8,7 @@ use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\AdmissionController;
 use App\Http\Controllers\DevolutionController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\SettlementController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -87,3 +88,13 @@ Route::group([
     Route::patch('/update', [DevolutionController::class, 'updateMultiple'])->name('devolutions.updateMultiple');
 });
 Route::apiResource('devolutions', DevolutionController::class)->middleware('role:dev|admin');
+
+// Settlement Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'settlements'
+], function () {
+    Route::post('/store', [SettlementController::class, 'storeMultiple'])->name('settlements.storeMultiple');
+    Route::patch('/update', [SettlementController::class, 'updateMultiple'])->name('settlements.updateMultiple');
+});
+Route::apiResource('settlements', SettlementController::class)->middleware('role:dev|admin');

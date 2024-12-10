@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Classes\ApiResponseClass;
 use App\Http\Requests\StoreShipmentRequest;
+use App\Http\Requests\StoreShipmentsRequest;
 use App\Http\Requests\UpdateShipmentRequest;
 use App\Http\Resources\ShipmentResource;
 use App\Interfaces\ShipmentRepositoryInterface;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ShipmentController extends Controller
 {
@@ -49,5 +51,33 @@ class ShipmentController extends Controller
     {
         $this->shipmentRepositoryInterface->delete($id);
         return ApiResponseClass::sendResponse([], 'Shipment deleted successfully', 200);
+    }
+
+    public function storeMultiple(StoreShipmentsRequest $request)
+    {
+        $data = $request->validated();
+        $successfulRecords = [];
+        $failedRecords = [];
+        DB::beginTransaction();
+        try {
+            foreach ($data as $shipment) {
+                try {
+                    $fields = ['verified_shipment', 'shipment_date', 'invoice_id', 'remarks', 'trama_verified', 'trama_date', 'courier_verified', 'courier_date', 'email_verified', 'email_verified_date'];
+                    $shipment = array_filter(
+                        array_intersect_key($shipment, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
+                    $newShipment = $this->shipmentRepositoryInterface->store($shipment);
+                    $successfulRecords[] = $newShipment;
+                } catch (\Exception $e) {
+                    $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
+                }
+            }
+            DB::commit();
+            return ApiResponseClass::sendResponse(ShipmentResource::collection($successfulRecords), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
     }
 }

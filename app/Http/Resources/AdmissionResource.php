@@ -14,6 +14,15 @@ class AdmissionResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        // Precalcular datos para evitar múltiples consultas
+        $latestInvoice = $this->relationLoaded('invoices') && $this->invoices->isNotEmpty()
+            ? $this->invoices->last()
+            : null;
+
+        $latestSettlement = $this->relationLoaded('settlements') && $this->settlements->isNotEmpty()
+            ? $this->settlements->last()
+            : null;
+
         return [
             'id' => $this->id,
             'number' => $this->number,
@@ -28,24 +37,30 @@ class AdmissionResource extends JsonResource
             'patient' => $this->patient,
             'medical_record_id' => $this->medical_record_id,
 
-            'last_invoice_number' => $this->invoices()->latest()->first()?->number,
-            'last_invoice_biller' => $this->invoices()->latest()->first()?->biller,
+            // Cargar datos de facturas y liquidaciones si existen
+            'last_invoice_number' => $latestInvoice?->number,
+            'last_invoice_biller' => $latestInvoice?->biller,
+            'last_invoice_status' => $latestInvoice?->status,
+            'last_settlement_period' => $latestSettlement?->period,
+            'last_settlement_biller' => $latestSettlement?->biller,
 
-            'insurer' => $this->whenLoaded('insurer', function () {
-                return new InsurerResource($this->insurer);
-            }),
-            'medical_record' => $this->whenLoaded('medicalRecord', function () {
-                return new MedicalRecordResource($this->medicalRecord);
-            }),
-            'invoices' => $this->whenLoaded('invoices', function () {
-                return InvoiceResource::collection($this->invoices);
-            }),
-            'devolutions' => $this->whenLoaded('devolutions', function () {
-                return $this->devolutions->isEmpty()
-                    ? null
-                    : DevolutionResource::collection($this->devolutions);
-            }),
-            'is_devolution' => !$this->devolutions->isEmpty(),
+            // Relación Insurer
+            'insurer' => $this->whenLoaded('insurer', fn() => new InsurerResource($this->insurer)),
+
+            // Relación Medical Record
+            'medical_record' => $this->whenLoaded('medicalRecord', fn() => new MedicalRecordResource($this->medicalRecord)),
+
+            // Relación Invoices
+            'invoices' => $this->whenLoaded('invoices', fn() => InvoiceResource::collection($this->invoices)),
+
+            // Relación Devolutions
+            'devolutions' => $this->whenLoaded('devolutions', fn() => $this->devolutions->isEmpty() ? null : DevolutionResource::collection($this->devolutions)),
+
+            // Relación Settlements
+            // 'settlements' => $this->whenLoaded('settlements', fn() => $this->settlements->isEmpty() ? null : SettlementResource::collection($this->settlements)),
+
+            // Indicador de devoluciones
+            'is_devolution' => $this->whenLoaded('devolutions', fn() => !$this->devolutions->isEmpty()),
         ];
     }
 }

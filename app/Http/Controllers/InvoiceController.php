@@ -125,14 +125,12 @@ class InvoiceController extends Controller
         try {
             foreach ($data as $invoice) {
                 try {
-                    $invoice = [
-                        'number' => $invoice['number'],
-                        'issue_date' => $invoice['issue_date'] ?? null,
-                        'status' => $invoice['status'] ?? null,
-                        'payment_date' => $invoice['payment_date'] ?? null,
-                        'amount' => $invoice['amount'] ?? null,
-                        'biller' => $invoice['biller'] ?? null,
-                    ];
+                    $fields = ['number', 'issue_date', 'status', 'payment_date', 'amount', 'biller'];
+
+                    $invoice = array_filter(
+                        array_intersect_key($invoice, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
                     $updatedInvoice = $this->invoiceRepositoryInterface->updateByNumber($invoice['number'], $invoice);
                     $successfulRecords[] = $updatedInvoice;
                 } catch (\Exception $e) {

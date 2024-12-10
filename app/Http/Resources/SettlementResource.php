@@ -32,7 +32,7 @@ class SettlementResource extends JsonResource
             'payment_date' => $this->payment_date,
             'status' => $this->status,
             'period' => $this->period,
-            'invoice' => new InvoiceResource($this->whenLoaded('invoice')),
+            'invoice' => $this->whenLoaded('invoice', fn() => new InvoiceResource($this->invoice)),
         ];
     }
 }

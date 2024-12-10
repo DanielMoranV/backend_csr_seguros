@@ -175,19 +175,11 @@ class AdmissionController extends Controller
                         }
 
                         // Preparar los datos para actualizar
-                        $updateData = [
-                            'attendance_date' => $admission['attendance_date'] ?? null,
-                            'attendance_hour' => $admission['attendance_hour'] ?? null,
-                            'type' => $admission['type'] ?? null,
-                            'doctor' => $admission['doctor'] ?? null,
-                            'status' => $admission['status'] ?? null,
-                            'insurer_id' => $admission['insurer_id'] ?? null,
-                            'company' => $admission['company'] ?? null,
-                            'amount' => $admission['amount'] ?? null,
-                            'patient' => $admission['patient'] ?? null,
-                            'medical_record_id' => $admission['medical_record_id'] ?? null,
-                            'updated_at' => now(),
-                        ];
+                        $fields = ['number', 'attendance_date', 'attendance_hour', 'type', 'doctor', 'status', 'insurer_id', 'company', 'amount', 'patient', 'medical_record_id'];
+                        $updateData = array_filter(
+                            array_intersect_key($admission, array_flip($fields)),
+                            fn($value) => $value !== null
+                        );
 
                         // Actualización directa usando Query Builder
                         DB::table('admissions')

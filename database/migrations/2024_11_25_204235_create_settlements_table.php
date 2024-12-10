@@ -23,7 +23,7 @@ return new class extends Migration
             $table->boolean('audited')->default(false);
             $table->dateTime('audited_date')->nullable();
             $table->boolean('billed')->default(false);
-            $table->foreignId('invoice_id')->constrained('invoices')->nullable();
+            $table->foreignId('invoice_id')->nullable()->constrained('invoices');
             $table->boolean('shipped')->default(false);
             $table->dateTime('shipment_date')->nullable();
             $table->boolean('paid')->default(false);

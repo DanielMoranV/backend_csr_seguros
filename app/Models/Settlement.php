@@ -16,8 +16,6 @@ class Settlement extends Model
         'reception_date',
         'settled',
         'settled_date',
-        'audited',
-        'audited_date',
         'billed',
         'invoice_id',
         'shipped',
@@ -26,6 +24,7 @@ class Settlement extends Model
         'payment_date',
         'status',
         'period',
+        'audit_id',
     ];
 
     // Relación con la admisión
@@ -44,5 +43,11 @@ class Settlement extends Model
     public function shipment()
     {
         return $this->belongsTo(Shipment::class);
+    }
+
+    // Relación con el auditor
+    public function audit()
+    {
+        return $this->belongsTo(Audit::class);
     }
 }

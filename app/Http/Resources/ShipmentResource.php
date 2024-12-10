@@ -26,9 +26,7 @@ class ShipmentResource extends JsonResource
             'courier_date' => $this->courier_date,
             'email_verified' => $this->email_verified,
             'email_verified_date' => $this->email_verified_date,
-            'invoice' => $this->whenLoaded('invoice', function () {
-                return new InvoiceResource($this->invoice);
-            }),
+            'invoice' => $this->whenLoaded('invoice', fn() => new InvoiceResource($this->invoice)),
 
         ];
     }
