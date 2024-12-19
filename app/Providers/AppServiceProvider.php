@@ -30,5 +30,6 @@ class AppServiceProvider extends ServiceProvider
         define('FACTURAS', 'SC0017');
         define('ASEGURADORAS', 'SC0002');
         define('LIQUIDACIONES', 'SC0012');
+        define('FACTURAS_PAGADAS', 'SC0022');
     }
 }
