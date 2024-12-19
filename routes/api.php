@@ -66,8 +66,11 @@ Route::group([
 ], function () {
     Route::post('/store', [AdmissionController::class, 'storeMultiple'])->name('admissions.storeMultiple');
     Route::patch('/update', [AdmissionController::class, 'updateMultiple'])->name('admissions.updateMultiple');
+    Route::post('/date-range', [AdmissionController::class, 'admissionsByDateRange'])->name('admissions.admissionsByDateRange');
 });
 Route::apiResource('admissions', AdmissionController::class)->middleware('role:dev|admin');
+
+Route::get('excequte_query', [AdmissionController::class, 'executeQuery'])->name('admissions.executeQuery');
 
 // Invoice Routes
 Route::group([

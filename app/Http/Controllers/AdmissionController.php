@@ -8,6 +8,7 @@ use App\Http\Requests\StoreAdmissionsRequest;
 use App\Http\Requests\UpdateAdmissionRequest;
 use App\Http\Resources\AdmissionResource;
 use App\Interfaces\AdmissionRepositoryInterface;
+use App\Services\ApiSisclinService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,10 +17,53 @@ class AdmissionController extends Controller
 {
     protected $admissionRepositoryInterface;
     protected $relations = ['insurer', 'invoices', 'settlements', 'devolutions'];
+    protected $apiSisclinService;
 
-    public function __construct(AdmissionRepositoryInterface $admissionRepositoryInterface)
+
+    public function __construct(AdmissionRepositoryInterface $admissionRepositoryInterface, ApiSisclinService $apiSisclinService)
     {
         $this->admissionRepositoryInterface = $admissionRepositoryInterface;
+        $this->apiSisclinService = $apiSisclinService;
+    }
+
+    public function executeQuery(Request $request)
+    {
+        $data = "SELECT SC0011.num_doc as number, SC0011.fec_doc as attendance_date, SC0011.nom_pac as patient, SC0011.hi_doc as attendance_hour, SC0011.ta_doc as type, SC0011.tot_doc as amount, SC0003.nom_emp as company, SC0006.nom_ser as doctor, SC0004.nh_pac medical_record_number, SC0011.clos_doc as is_closed, SC0017.num_fac as invoice_number, SC0017.fec_fac as invoice_date, SC0017.uc_sis as biller, SC0033.fh_dev, SC0002.nom_cia as insurer_name FROM SC0011 LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc WHERE SC0011.fec_doc BETWEEN ctod('12-12-2024') AND ctod('12-12-2024') AND SC0002.nom_cia <> 'PARTICULAR' AND SC0004.nh_pac IS NOT NULL AND SC0004.nh_pac <> '' AND SC0011.nom_pac IS NOT NULL AND SC0011.nom_pac <> '' ORDER BY SC0011.cod_ser ASC;";
+        $response = $this->apiSisclinService->executeQuery($data);
+        Log::info('Response from FastAPI: ' . $response->status());
+        return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+    }
+
+    public function admissionsByDateRange(Request $request)
+    {
+        $data = $request->validate([
+            'start_date' => 'required|date_format:m-d-Y',
+            'end_date' => 'required|date_format:m-d-Y',
+        ]);
+
+        $start_date = $data['start_date'];
+        $end_date = $data['end_date'];
+
+        $query = "SELECT " . ADMISIONES . ".num_doc as number, " . ADMISIONES . ".fec_doc as attendance_date, " . ADMISIONES . ".nom_pac as patient, " . ADMISIONES . ".hi_doc as attendance_hour, " . ADMISIONES . ".ta_doc as type, " . ADMISIONES . ".tot_doc as amount, " . EMPRESAS . ".nom_emp as company, " . SERVICIOS . ".nom_ser as doctor, " . PACIENTES . ".nh_pac medical_record_number, " . ADMISIONES . ".clos_doc as is_closed, " . FACTURAS . ".num_fac as invoice_number, " . FACTURAS . ".fec_fac as invoice_date, " . FACTURAS . ".uc_sis as biller, " . DEVOLUCIONES . ".fh_dev, " . ASEGURADORAS . ".nom_cia as insurer_name
+        FROM " . ADMISIONES . "
+        LEFT JOIN " . SERVICIOS . " ON " . ADMISIONES . ".cod_ser = " . SERVICIOS . ".cod_ser
+        LEFT JOIN " . ASEGURADORAS . " ON LEFT(" . ADMISIONES . ".cod_emp, 2) = " . ASEGURADORAS . ".cod_cia
+        LEFT JOIN " . EMPRESAS . " ON " . ADMISIONES . ".cod_emp = " . EMPRESAS . ".cod_emp
+        LEFT JOIN " . PACIENTES . " ON " . ADMISIONES . ".cod_pac = " . PACIENTES . ".cod_pac
+        LEFT JOIN " . DEVOLUCIONES . " ON " . ADMISIONES . ".num_doc = " . DEVOLUCIONES . ".num_doc
+        LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
+        WHERE " . ADMISIONES . ".fec_doc BETWEEN ctod('{$start_date}') AND ctod('{$end_date}')
+        AND " . ASEGURADORAS . ".nom_cia <> 'PARTICULAR'
+        AND " . ASEGURADORAS . ".nom_cia <> 'PACIENTES PARTICULARES'
+        AND " . PACIENTES . ".nh_pac IS NOT NULL
+        AND " . PACIENTES . ".nh_pac <> ''
+        AND " . ADMISIONES . ".nom_pac IS NOT NULL
+        AND " . ADMISIONES . ".nom_pac <> ''
+        ORDER BY " . ADMISIONES . ".cod_ser ASC;";
+
+        $response = $this->apiSisclinService->executeQuery($query);
+        Log::info('Response from FastAPI: ' . $response->status());
+        return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
     }
 
     public function index()

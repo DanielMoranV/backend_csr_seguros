@@ -18,6 +18,8 @@ class BaseRepository implements BaseRepositoryInterface
     {
         if (!empty($relations)) {
             return $this->model::with($relations)->get();
+
+            // selec * from users inner
         }
         return $this->model::all();
     }
