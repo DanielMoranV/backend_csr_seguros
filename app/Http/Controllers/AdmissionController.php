@@ -61,7 +61,7 @@ class AdmissionController extends Controller
         AND " . PACIENTES . ".nh_pac <> ''
         AND " . ADMISIONES . ".nom_pac IS NOT NULL
         AND " . ADMISIONES . ".nom_pac <> ''
-        ORDER BY " . ADMISIONES . ".num_doc ASC;";
+        ORDER BY " . ADMISIONES . ".num_doc DESC;";
 
         $response = $this->apiSisclinService->executeQuery($query);
         Log::info('Response from FastAPI: ' . $response->status());
@@ -79,9 +79,11 @@ class AdmissionController extends Controller
         LEFT JOIN " . PACIENTES . " ON " . ADMISIONES . ".cod_pac = " . PACIENTES . ".cod_pac
         LEFT JOIN " . DEVOLUCIONES . " ON " . ADMISIONES . ".num_doc = " . DEVOLUCIONES . ".num_doc
         LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
-        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_fac = " . FACTURAS_PAGADAS . "num_fac WHERE " . ADMISIONES . ".num_doc = '{$number}';";
+        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_fac = " . FACTURAS_PAGADAS . ".num_fac WHERE " . ADMISIONES . ".num_doc = '{$number}'
+        ORDER BY " . ADMISIONES . ".num_doc DESC ;";
         $response = $this->apiSisclinService->executeQuery($query);
         Log::info('Response from FastAPI: ' . $response->status());
+
         return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
     }
 
