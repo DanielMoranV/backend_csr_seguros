@@ -53,14 +53,12 @@ class AdmissionController extends Controller
         LEFT JOIN " . PACIENTES . " ON " . ADMISIONES . ".cod_pac = " . PACIENTES . ".cod_pac
         LEFT JOIN " . DEVOLUCIONES . " ON " . ADMISIONES . ".num_doc = " . DEVOLUCIONES . ".num_doc
         LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
-        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_fac = " . FACTURAS_PAGADAS . ".num_fac
+        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_doc = " . FACTURAS_PAGADAS . ".num_doc
         WHERE " . ADMISIONES . ".fec_doc BETWEEN ctod('{$start_date}') AND ctod('{$end_date}')
         AND " . ASEGURADORAS . ".nom_cia <> 'PARTICULAR'
         AND " . ASEGURADORAS . ".nom_cia <> 'PACIENTES PARTICULARES'
-        AND " . PACIENTES . ".nh_pac IS NOT NULL
-        AND " . PACIENTES . ".nh_pac <> ''
-        AND " . ADMISIONES . ".nom_pac IS NOT NULL
         AND " . ADMISIONES . ".nom_pac <> ''
+        AND " . ADMISIONES . ".nom_pac <> 'No existe...'
         ORDER BY " . ADMISIONES . ".num_doc DESC;";
 
         $response = $this->apiSisclinService->executeQuery($query);
@@ -79,13 +77,24 @@ class AdmissionController extends Controller
         LEFT JOIN " . PACIENTES . " ON " . ADMISIONES . ".cod_pac = " . PACIENTES . ".cod_pac
         LEFT JOIN " . DEVOLUCIONES . " ON " . ADMISIONES . ".num_doc = " . DEVOLUCIONES . ".num_doc
         LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
-        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_fac = " . FACTURAS_PAGADAS . ".num_fac WHERE " . ADMISIONES . ".num_doc = '{$number}'
+        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_doc = " . FACTURAS_PAGADAS . ".num_doc
+        WHERE " . ADMISIONES . ".num_doc = '{$number}'
         ORDER BY " . ADMISIONES . ".num_doc DESC ;";
-        $response = $this->apiSisclinService->executeQuery($query);
-        Log::info('Response from FastAPI: ' . $response->status());
+        try {
+            $response = $this->apiSisclinService->executeQuery($query, [$number]);
+            Log::debug('Generated Query', ['query' => $query]);
 
-        return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+            if (isset($response->json()['data'])) {
+                return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+            } else {
+                return ApiResponseClass::sendResponse($response->json(), $query, $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching admission data: ' . $e->getMessage());
+            return ApiResponseClass::errorResponse([], $e->getMessage(), 500);
+        }
     }
+
 
 
     public function index()
