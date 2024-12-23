@@ -44,7 +44,7 @@ class AdmissionController extends Controller
         $start_date = $data['start_date'];
         $end_date = $data['end_date'];
 
-        $query = "SELECT DISTINCT " . ADMISIONES . ".num_doc as number, " . ADMISIONES . ".fec_doc as attendance_date, " . ADMISIONES . ".nom_pac as patient, " . ADMISIONES . ".hi_doc as attendance_hour, " . ADMISIONES . ".ta_doc as type, " . ADMISIONES . ".tot_doc as amount, " . EMPRESAS . ".nom_emp as company, " . SERVICIOS . ".nom_ser as doctor, " . PACIENTES . ".nh_pac medical_record_number, " . ADMISIONES . ".clos_doc as is_closed, " . FACTURAS . ".num_fac as invoice_number, " . FACTURAS . ".fec_fac as invoice_date, " . FACTURAS . ".uc_sis as biller, " . DEVOLUCIONES . ".fh_dev as devolution_date, " . ASEGURADORAS . ".nom_cia as insurer_name,
+        $query = "SELECT " . ADMISIONES . ".num_doc as number, " . ADMISIONES . ".fec_doc as attendance_date, " . ADMISIONES . ".nom_pac as patient, " . ADMISIONES . ".hi_doc as attendance_hour, " . ADMISIONES . ".ta_doc as type, " . ADMISIONES . ".tot_doc as amount, " . EMPRESAS . ".nom_emp as company, " . SERVICIOS . ".nom_ser as doctor, " . PACIENTES . ".nh_pac medical_record_number, " . ADMISIONES . ".clos_doc as is_closed, " . FACTURAS . ".num_fac as invoice_number, " . FACTURAS . ".fec_fac as invoice_date, " . FACTURAS . ".uc_sis as biller, " . DEVOLUCIONES . ".fh_dev as devolution_date, " . ASEGURADORAS . ".nom_cia as insurer_name,
         " . FACTURAS_PAGADAS . ".num_fac as paid_invoice_number
         FROM " . ADMISIONES . "
         LEFT JOIN " . SERVICIOS . " ON " . ADMISIONES . ".cod_ser = " . SERVICIOS . ".cod_ser
@@ -55,15 +55,25 @@ class AdmissionController extends Controller
         LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
         LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_doc = " . FACTURAS_PAGADAS . ".num_doc
         WHERE " . ADMISIONES . ".fec_doc BETWEEN ctod('{$start_date}') AND ctod('{$end_date}')
-        AND " . ASEGURADORAS . ".nom_cia <> 'PARTICULAR'
-        AND " . ASEGURADORAS . ".nom_cia <> 'PACIENTES PARTICULARES'
         AND " . ADMISIONES . ".nom_pac <> ''
         AND " . ADMISIONES . ".nom_pac <> 'No existe...'
+        AND " . ASEGURADORAS . ".nom_cia <> 'PARTICULAR'
+        AND " . ASEGURADORAS . ".nom_cia <> 'PACIENTES PARTICULARES'
         ORDER BY " . ADMISIONES . ".num_doc DESC;";
 
-        $response = $this->apiSisclinService->executeQuery($query);
-        Log::info('Response from FastAPI: ' . $response->status());
-        return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+        try {
+            $response = $this->apiSisclinService->executeQuery($query, [$start_date, $end_date]);
+            Log::debug('Generated Query', ['query' => $query]);
+
+            if (isset($response->json()['data'])) {
+                return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+            } else {
+                return ApiResponseClass::sendResponse($response->json(), $query, $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching admission data: ' . $e->getMessage());
+            return ApiResponseClass::errorResponse([], $e->getMessage(), 500);
+        }
     }
 
     public function admissionByNumber(String $number)
@@ -78,7 +88,7 @@ class AdmissionController extends Controller
         LEFT JOIN " . DEVOLUCIONES . " ON " . ADMISIONES . ".num_doc = " . DEVOLUCIONES . ".num_doc
         LEFT JOIN " . FACTURAS . " ON " . ADMISIONES . ".num_doc = " . FACTURAS . ".num_doc
         LEFT JOIN " . FACTURAS_PAGADAS . " ON " . FACTURAS . ".num_doc = " . FACTURAS_PAGADAS . ".num_doc
-        WHERE " . ADMISIONES . ".num_doc = '{$number}'
+        WHERE " . ADMISIONES . ".num_doc LIKE '%{$number}%'
         ORDER BY " . ADMISIONES . ".num_doc DESC ;";
         try {
             $response = $this->apiSisclinService->executeQuery($query, [$number]);

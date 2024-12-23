@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateDevolutionRequest;
 use App\Http\Requests\UpdateDevolutionsRequest;
 use App\Http\Resources\DevolutionResource;
 use App\Interfaces\DevolutionRepositoryInterface;
+use App\Services\ApiSisclinService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -17,10 +18,12 @@ class DevolutionController extends Controller
 {
     protected $devolutionRepositoryInterface;
     protected $relations = ['invoice', 'admission.insurer'];
+    protected $apiSisclinService;
 
-    public function __construct(DevolutionRepositoryInterface $devolutionRepositoryInterface)
+    public function __construct(DevolutionRepositoryInterface $devolutionRepositoryInterface, ApiSisclinService $apiSisclinService)
     {
         $this->devolutionRepositoryInterface = $devolutionRepositoryInterface;
+        $this->apiSisclinService = $apiSisclinService;
     }
 
     public function index()
@@ -144,6 +147,41 @@ class DevolutionController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function devolutionByDataRange(Request $request)
+    {
+        $data = $request->all();
+
+        $data = $request->validate([
+            'start_date' => 'required|date_format:m-d-Y',
+            'end_date' => 'required|date_format:m-d-Y',
+        ]);
+
+        $start_date = $data['start_date'];
+        $end_date = $data['end_date'];
+
+        $query = "SELECT " . DEVOLUCIONES . ".fh_dev as devolution_date, " . DEVOLUCIONES . ".per_dev as period, " . FACTURAS . ".num_fac as invoice_number, " . FACTURAS . ".fec_fac as invoice_date, " . FACTURAS . ".tot_fac as invoice_amount, " . DEVOLUCIONES . ".nom_cia as insurer, " . DEVOLUCIONES . ".num_doc as admission_number, " . DEVOLUCIONES . ".tip_dev as devolution_type,
+        " . DEVOLUCIONES . ".fec_doc as attendance_date, " . DEVOLUCIONES . ".nom_pac as patient, " . DEVOLUCIONES . ".mot_dev as reason, " . DEVOLUCIONES . ".usu_dev as biller, " . FACTURAS_PAGADAS . ".num_fac as paid_invoice_number, " . FACTURAS . ".tot_fac as invoice_amount, " . DEVOLUCIONES . ".nom_ser as doctor
+        FROM " . DEVOLUCIONES . "
+        LEFT JOIN " . FACTURAS_PAGADAS . " ON " . DEVOLUCIONES . ".num_doc = " . FACTURAS_PAGADAS . ".num_doc
+        LEFT JOIN " . FACTURAS . " ON " . DEVOLUCIONES . ".num_doc = " . FACTURAS . ".num_doc
+        WHERE " . DEVOLUCIONES . ".fec_doc BETWEEN ctod('{$start_date}') AND ctod('{$end_date}')
+        ORDER BY " . DEVOLUCIONES . ".fh_dev DESC;";
+
+        try {
+            $response = $this->apiSisclinService->executeQuery($query);
+
+
+            if (isset($response->json()['data'])) {
+                return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
+            } else {
+                return ApiResponseClass::sendResponse($response->json(), $query, $response->status());
+            }
+        } catch (\Exception $e) {
+            Log::error('Error fetching admission data: ' . $e->getMessage());
+            return ApiResponseClass::errorResponse([], $e->getMessage(), 500);
         }
     }
 }

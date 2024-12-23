@@ -90,6 +90,7 @@ Route::group([
 ], function () {
     Route::post('/store', [DevolutionController::class, 'storeMultiple'])->name('devolutions.storeMultiple');
     Route::patch('/update', [DevolutionController::class, 'updateMultiple'])->name('devolutions.updateMultiple');
+    Route::post('/date-range', [DevolutionController::class, 'devolutionByDataRange'])->name('devolutions.devolutionByDataRange');
 });
 Route::apiResource('devolutions', DevolutionController::class)->middleware('role:dev|admin');
 
