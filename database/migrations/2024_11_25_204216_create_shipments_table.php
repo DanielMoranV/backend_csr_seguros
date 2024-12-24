@@ -14,10 +14,9 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
         Schema::create('shipments', function (Blueprint $table) {
             $table->id();
-            $table->boolean('verified_shipment')->default(false);
-            $table->dateTime('shipment_date');
+            $table->dateTime('verified_shipment_shipment_date');
             $table->dateTime('reception_date')->nullable();
-            $table->foreignId('invoice_id')->constrained('invoices');
+            $table->string('invoice_number');
             $table->text('remarks')->nullable();
             $table->boolean('trama_verified')->default(false);
             $table->dateTime('trama_date')->nullable();
