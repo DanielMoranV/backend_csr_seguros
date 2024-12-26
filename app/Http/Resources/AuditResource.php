@@ -14,6 +14,15 @@ class AuditResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        return parent::toArray($request);
+        return [
+            'id' => $this->id,
+            'auditor' => $this->auditor,
+            'status' => $this->status,
+            'admissions_number' => $this->admissions_number,
+            'invoice_number' => $this->invoice_number,
+            'admissions_list_id' => $this->admissions_list_id,
+            'admissions_list' => $this->whenLoaded('admissionsList', fn() => new AdmissionsListResource($this->admissionsList)),
+
+        ];
     }
 }

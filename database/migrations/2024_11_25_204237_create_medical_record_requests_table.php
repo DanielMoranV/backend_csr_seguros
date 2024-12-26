@@ -14,11 +14,12 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
         Schema::create('medical_record_requests', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('requester_id')->constrained('users');
-            $table->foreignId('requested_id')->constrained('users')->nullable();
+            $table->string('requester_nick');
+            $table->string('requested_nick')->nullable();
+            $table->string('admission_number');
+            $table->string('medical_record_number');
             $table->dateTime('request_date');
             $table->dateTime('response_date')->nullable();
-            $table->foreignId('medical_record_id')->constrained('medical_records');
             $table->string('remarks')->nullable();
             $table->enum('status', ['Atendido', 'Rechazado', 'Pendiente'])->default('Pendiente');
             $table->timestamps();

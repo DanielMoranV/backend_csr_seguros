@@ -8,17 +8,17 @@ class Audit extends Model
 {
     protected $table = 'audits';
 
-    protected $fillable = ['name', 'description', 'status'];
+    protected $fillable = [
+        'auditor',
+        'description',
+        'status',
+        'admission_number',
+        'invoice_number'
+    ];
 
-    // Relación con la liquidación
-    public function settlement()
+    // Relación con la lista de admisiones
+    public function admissionsList()
     {
-        return $this->hasMany(Settlement::class);
-    }
-
-    // Relación con la devolución
-    public function devolution()
-    {
-        return $this->hasMany(Devolution::class);
+        return $this->hasMany(AdmissionsList::class);
     }
 }

@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::disableForeignKeyConstraints();
         Schema::create('audits', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->string('admission_number');
+            $table->string('invoice_number');
+            $table->string('auditor');
             $table->string('description');
             $table->enum('status', ['Aprobado', 'Con Observaciones', 'Rechazado', 'Pendiente'])->default('Pendiente');
             $table->timestamps();
