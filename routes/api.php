@@ -9,6 +9,9 @@ use App\Http\Controllers\AdmissionController;
 use App\Http\Controllers\DevolutionController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SettlementController;
+use App\Http\Controllers\AdmissionsListController;
+use App\Http\Controllers\AuditController;
+use App\Http\Controllers\MedicalRecordRequestController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -103,3 +106,34 @@ Route::group([
     Route::patch('/update', [SettlementController::class, 'updateMultiple'])->name('settlements.updateMultiple');
 });
 Route::apiResource('settlements', SettlementController::class)->middleware('role:dev|admin');
+
+// Admissions List Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'admissions-lists'
+], function () {
+    Route::post('/store', [AdmissionsListController::class, 'storeMultiple'])->name('admissions-lists.storeMultiple');
+    Route::patch('/update', [AdmissionsListController::class, 'updateMultiple'])->name('admissions-lists.updateMultiple');
+});
+Route::apiResource('admissions-lists', AdmissionsListController::class)->middleware('role:dev|admin');
+
+// Audit Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'audits'
+], function () {
+    Route::post('/store', [AuditController::class, 'storeMultiple'])->name('audits.storeMultiple');
+    Route::patch('/update', [AuditController::class, 'updateMultiple'])->name('audits.updateMultiple');
+});
+Route::apiResource('audits', AuditController::class)->middleware('role:dev|admin');
+
+
+// Medical Records Requests
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'medical-records-requests'
+], function () {
+    Route::post('/store', [MedicalRecordRequestController::class, 'storeMultiple'])->name('medical-records-requests.storeMultiple');
+    Route::patch('/update', [MedicalRecordRequestController::class, 'updateMultiple'])->name('medical-records-requests.updateMultiple');
+});
+Route::apiResource('medical-records-requests', MedicalRecordRequestController::class)->middleware('role:dev|admin');

@@ -22,9 +22,11 @@ class UpdateAuditRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'string|max:255',
-            'description' => 'string|max:255',
-            'status' => 'string|max:255',
+            'auditor' => 'nullable|string',
+            'description' => 'nullable|string',
+            'status' => 'nullable|string',
+            'admission_number' => 'nullable|string',
+            'invoice_number' => 'nullable|string',
         ];
     }
 }
