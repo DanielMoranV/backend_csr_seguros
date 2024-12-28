@@ -39,6 +39,7 @@ class UserController extends Controller
         $data = [
             'name' => $request->name,
             'dni' => $request->dni,
+            'nick' => $request->nick,
             'phone' => $request->phone,
             'photo' => $request->photo,
             'position' => $request->position,

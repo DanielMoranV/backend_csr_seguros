@@ -18,16 +18,17 @@ class DatabaseSeeder extends Seeder
         User::factory()->create([
             'name' => 'Daniel Moran Vilchez',
             'email' => 'daniel.moranv94@gmail.com',
+            'nick' => 'DMORAN',
             'password' => bcrypt('admin3264'),
-            'position' => 'Desarrollador',
             'dni' => '70315050',
             'phone' => '948860381',
-            'position' => 'Soporte T.I',
+            'position' => 'SISTEMAS',
         ]);
 
         $this->call([
             RolesSeeder::class,
             InsurersTableSeeder::class,
+            UserSeeder::class,
         ]);
     }
 }

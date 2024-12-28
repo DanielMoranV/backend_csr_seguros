@@ -26,6 +26,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => 'required',
             'dni' => 'required|unique:users',
+            'nick' => 'required|unique:users',
             'email' => 'required|email',
             'position' => 'required',
             'phone' => 'required',
@@ -35,6 +36,6 @@ class StoreUserRequest extends FormRequest
     }
     public function failedValidation(Validator $validator)
     {
-        ApiResponseClass::validationError($validator);
+        ApiResponseClass::validationError($validator, 422);
     }
 }
