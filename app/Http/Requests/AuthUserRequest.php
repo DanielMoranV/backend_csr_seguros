@@ -35,6 +35,6 @@ class AuthUserRequest extends FormRequest
 
     public function failedValidation(Validator $validator)
     {
-        ApiResponseClass::validationError($validator);
+        ApiResponseClass::validationError($validator, $this->response);
     }
 }

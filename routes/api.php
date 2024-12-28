@@ -114,6 +114,7 @@ Route::group([
 ], function () {
     Route::post('/store', [AdmissionsListController::class, 'storeMultiple'])->name('admissions-lists.storeMultiple');
     Route::patch('/update', [AdmissionsListController::class, 'updateMultiple'])->name('admissions-lists.updateMultiple');
+    Route::post('/create-admission-list-and-request', [AdmissionsListController::class, 'createAdmissionsLists'])->name('admissions-lists.createAdmissionsLists');
 });
 Route::apiResource('admissions-lists', AdmissionsListController::class)->middleware('role:dev|admin');
 

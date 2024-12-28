@@ -19,10 +19,10 @@ use App\Interfaces\AuditRepositoryInterface;
 use App\Repositories\AuditRepository;
 use App\Interfaces\SettlementRepositoryInterface;
 use App\repositories\SettlementControllerRepository;
-use App\Interfaces\admissionsListRepositoryInterface;
+use App\Interfaces\AdmissionsListRepositoryInterface;
 use App\Interfaces\MedicalRecordRequestRepositoryInterface;
-use App\Repositories\admissionsListRepository;
-use App\repositories\MedicalRecordRequestRepository;
+use App\Repositories\AdmissionsListRepository;
+use App\Repositories\MedicalRecordRequestRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -39,7 +39,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(DevolutionRepositoryInterface::class, DevolutionRepository::class);
         $this->app->bind(AuditRepositoryInterface::class, AuditRepository::class);
         $this->app->bind(SettlementRepositoryInterface::class, SettlementControllerRepository::class);
-        $this->app->bind(admissionsListRepositoryInterface::class, admissionsListRepository::class);
+        $this->app->bind(AdmissionsListRepositoryInterface::class, AdmissionsListRepository::class);
         $this->app->bind(MedicalRecordRequestRepositoryInterface::class, MedicalRecordRequestRepository::class);
     }
 

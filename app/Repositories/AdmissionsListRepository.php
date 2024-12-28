@@ -14,4 +14,12 @@ class AdmissionsListRepository extends BaseRepository implements AdmissionsListR
     {
         parent::__construct($model);
     }
+
+    /**
+     * Check if exists by admission_number
+     */
+    public function exists(string $column, string $value): bool
+    {
+        return $this->model->where($column, $value)->exists();
+    }
 }
