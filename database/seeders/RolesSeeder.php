@@ -16,11 +16,19 @@ class RolesSeeder extends Seeder
     {
         // Crear roles
         $devRole = Role::create(['name' => 'dev']);
-        Role::create(['name' => 'admin']);
+        $admin = Role::create(['name' => 'admin']);
         //Asignar el rol "dev" al usuario con ID 1
         $user = User::find(1);
         if ($user) {
             $user->assignRole($devRole);
+        }
+
+        // contar cuantos usuarios hay en la tabla users y asignar el rol "admin" todos excepto al usuario con ID 1
+        $users = User::all();
+        foreach ($users as $user) {
+            if ($user->id != 1) {
+                $user->assignRole($admin);
+            }
         }
     }
 }

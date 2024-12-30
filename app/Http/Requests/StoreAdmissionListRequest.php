@@ -30,6 +30,7 @@ class StoreAdmissionListRequest extends FormRequest
             'shipment_id' => 'nullable',
             'audit_id' => 'nullable',
             'medical_record_request_id' => 'nullable',
+            'observations' => 'nullable|string'
         ];
     }
 }

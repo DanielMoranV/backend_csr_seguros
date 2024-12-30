@@ -16,6 +16,7 @@ class AdmissionsList extends Model
         'shipment_id',
         'audit_id',
         'medical_record_request_id',
+        'observations'
     ];
 
     public function shipment()

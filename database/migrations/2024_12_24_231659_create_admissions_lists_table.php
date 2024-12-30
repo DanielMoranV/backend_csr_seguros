@@ -18,6 +18,7 @@ return new class extends Migration
             $table->date('start_date');
             $table->date('end_date');
             $table->string('biller');
+            $table->string('observations')->nullable();
             $table->foreignId('shipment_id')->nullable()->constrained('shipments');
             $table->foreignId('audit_id')->nullable()->constrained('audits');
             $table->foreignId('medical_record_request_id')->nullable()->constrained('medical_record_requests');

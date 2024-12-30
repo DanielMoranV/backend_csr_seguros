@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\DB;
 use App\Models\AdmissionsList;
 use App\Services\AdmissionsListsService;
 use Illuminate\Http\Request;
-
-
+use Illuminate\Support\Facades\Log;
 
 class AdmissionsListController extends Controller
 {
@@ -61,7 +60,7 @@ class AdmissionsListController extends Controller
      */
     public function show(AdmissionsList $admissionsList)
     {
-        //
+        Log::debug('SHOW');
     }
 
     /**
@@ -170,5 +169,19 @@ class AdmissionsListController extends Controller
     public function createAdmissionsLists(CreateAdmissionsListsRequest $request)
     {
         return $this->admissionsListsService->storeAdmissionListAndRequest($request);
+    }
+
+    public function getByPeriod($period)
+    {
+        // convertir a period en string antes de usarlo
+        $period = (string) $period;
+        $data = $this->admissionsListRepositoryInterface->getByPeriod($period, $this->relations);
+        return ApiResponseClass::sendResponse($data, '', 200);
+    }
+
+    public function getAllPeriods()
+    {
+        $periods = $this->admissionsListRepositoryInterface->getAllPeriods();
+        return ApiResponseClass::sendResponse($periods, 'Periodos', 200);
     }
 }

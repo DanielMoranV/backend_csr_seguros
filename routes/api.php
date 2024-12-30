@@ -115,6 +115,10 @@ Route::group([
     Route::post('/store', [AdmissionsListController::class, 'storeMultiple'])->name('admissions-lists.storeMultiple');
     Route::patch('/update', [AdmissionsListController::class, 'updateMultiple'])->name('admissions-lists.updateMultiple');
     Route::post('/create-admission-list-and-request', [AdmissionsListController::class, 'createAdmissionsLists'])->name('admissions-lists.createAdmissionsLists');
+    // ruta para obtener todos los periodos disponibles
+    Route::get('/periods', [AdmissionsListController::class, 'getAllPeriods'])->name('admissions-lists.getAllPeriods');
+    // ruta get para obtener por periodo
+    Route::get('/by-period/{period}', [AdmissionsListController::class, 'getByPeriod'])->name('admissions-lists.getByPeriod');
 });
 Route::apiResource('admissions-lists', AdmissionsListController::class)->middleware('role:dev|admin');
 

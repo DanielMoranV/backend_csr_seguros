@@ -21,13 +21,14 @@ class AdmissionsListResource extends JsonResource
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
             'biller' => $this->biller,
+            'observations' => $this->observations,
             'shipment_id' => $this->shipment_id,
             'audit_id' => $this->audit_id,
             'medical_record_request_id' => $this->medical_record_request_id,
 
             'audits' => $this->whenLoaded('audits', fn() => $this->audits->isEmpty() ? null : AuditResource::collection($this->audits)),
 
-            'medical_record_requests' => $this->whenLoaded('audits', fn() => $this->medical_record_requests->isEmpty() ? null : MedicalRecordRequestResource::collection($this->medical_record_requests)),
+            'medical_record_requests' => $this->whenLoaded('medicalRecordRequest', fn() => new MedicalRecordRequestResource($this->medicalRecordRequest)),
         ];
     }
 }
