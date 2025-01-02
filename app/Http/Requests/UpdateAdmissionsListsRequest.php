@@ -2,7 +2,10 @@
 
 namespace App\Http\Requests;
 
+
+use App\Classes\ApiResponseClass;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Contracts\Validation\Validator;
 
 class UpdateAdmissionsListsRequest extends FormRequest
 {
@@ -11,7 +14,7 @@ class UpdateAdmissionsListsRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -33,5 +36,10 @@ class UpdateAdmissionsListsRequest extends FormRequest
             '*.medical_record_request_id' => 'nullable',
             '*.observations' => 'nullable|string'
         ];
+    }
+
+    public function failedValidation(Validator $validator)
+    {
+        ApiResponseClass::validationError($validator, $this->all());
     }
 }

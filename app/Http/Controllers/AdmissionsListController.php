@@ -76,7 +76,7 @@ class AdmissionsListController extends Controller
      */
     public function update(UpdateAdmissionListRequest $request, string $id)
     {
-        $data = $request->validate();
+        $data = $request->validated();
         $admissionsList = $this->admissionsListRepositoryInterface->update($data, $id);
         return ApiResponseClass::sendResponse(new AdmissionsListResource($admissionsList), '', 200);
     }
