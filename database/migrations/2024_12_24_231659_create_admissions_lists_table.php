@@ -19,6 +19,7 @@ return new class extends Migration
             $table->date('end_date');
             $table->string('biller');
             $table->string('observations')->nullable();
+            $table->dateTime('audit_requested_at')->nullable();
             $table->foreignId('shipment_id')->nullable()->constrained('shipments');
             $table->foreignId('audit_id')->nullable()->constrained('audits');
             $table->foreignId('medical_record_request_id')->nullable()->constrained('medical_record_requests');

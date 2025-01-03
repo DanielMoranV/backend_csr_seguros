@@ -14,6 +14,7 @@ class AdmissionsList extends Model
         'end_date',
         'biller',
         'shipment_id',
+        'audit_requested_at',
         'audit_id',
         'medical_record_request_id',
         'observations'

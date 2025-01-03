@@ -23,6 +23,7 @@ class AdmissionsListResource extends JsonResource
             'biller' => $this->biller,
             'observations' => $this->observations,
             'shipment_id' => $this->shipment_id,
+            'audit_requested_at' => $this->audit_requested_at,
             'audit_id' => $this->audit_id,
             'medical_record_request_id' => $this->medical_record_request_id,
 
