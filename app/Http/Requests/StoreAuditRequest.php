@@ -23,9 +23,10 @@ class StoreAuditRequest extends FormRequest
     {
         return [
             'auditor' => 'required|string',
-            'description' => 'required|string',
+            'description' => 'nullable|string',
             'admission_number' => 'required|string',
-            'invoice_number' => 'required|string',
+            'invoice_number' => 'nullable|string',
+            'status' => 'required|in:Aprobado,Con Observaciones,Rechazado,Pendiente',
         ];
     }
 }

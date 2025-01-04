@@ -16,7 +16,7 @@ class AdmissionsListResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'admissions_number' => $this->admissions_number,
+            'admission_number' => $this->admission_number,
             'period' => $this->period,
             'start_date' => $this->start_date,
             'end_date' => $this->end_date,
