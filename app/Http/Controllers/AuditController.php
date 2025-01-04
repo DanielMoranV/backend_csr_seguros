@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Classes\ApiResponseClass;
 use App\Http\Requests\StoreAuditRequest;
+use App\Http\Requests\UpdateAuditRequest;
 use App\Http\Resources\AuditResource;
 use App\Interfaces\AuditRepositoryInterface;
 use App\Models\Audit;
@@ -47,23 +48,19 @@ class AuditController extends Controller
         return ApiResponseClass::sendResponse(new AuditResource($audit), '', 200);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Audit $audit)
-    {
-        $audit = $this->auditRepositoryInterface->getById($audit->id);
-        return ApiResponseClass::sendResponse(new AuditResource($audit), '', 200);
-    }
 
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Audit $audit)
+    public function update(UpdateAuditRequest $request,  $id)
     {
-        $data = $request->validated();
-        $audit = $this->auditRepositoryInterface->update($audit->id, $data);
-        return ApiResponseClass::sendResponse(new AuditResource($audit), '', 200);
+        try {
+            $data = $request->validated();
+            $audit = $this->auditRepositoryInterface->update($data, $id);
+            return ApiResponseClass::sendResponse(new AuditResource($audit), '', 200);
+        } catch (\Exception $e) {
+            return ApiResponseClass::sendResponse([], $e->getMessage(), 500);
+        }
     }
 
     /**

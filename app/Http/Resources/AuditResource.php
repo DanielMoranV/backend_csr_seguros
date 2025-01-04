@@ -18,6 +18,7 @@ class AuditResource extends JsonResource
             'id' => $this->id,
             'auditor' => $this->auditor,
             'status' => $this->status,
+            'description' => $this->description,
             'admission_number' => $this->admission_number,
             'invoice_number' => $this->invoice_number,
             'admissions_list' => $this->whenLoaded('admissionsList', fn() => new AdmissionsListResource($this->admissionsList)),
