@@ -31,6 +31,21 @@ return [
 
     'connections' => [
 
+        'external_db' => [
+            'driver' => 'mysql',
+            'host' => env('DB_EXTERNAL_HOST', '127.0.0.1'),
+            'port' => env('DB_EXTERNAL_PORT', '3306'),
+            'database' => env('DB_EXTERNAL_DATABASE', 'db_sisclin'),
+            'username' => env('DB_EXTERNAL_USERNAME', 'root'),
+            'password' => env('DB_EXTERNAL_PASSWORD', ''),
+            'unix_socket' => env('DB_EXTERNAL_SOCKET', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
@@ -147,7 +162,7 @@ return [
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),
-            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_').'_database_'),
+            'prefix' => env('REDIS_PREFIX', Str::slug(env('APP_NAME', 'laravel'), '_') . '_database_'),
         ],
 
         'default' => [

@@ -11,6 +11,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\SettlementController;
 use App\Http\Controllers\AdmissionsListController;
 use App\Http\Controllers\AuditController;
+use App\Http\Controllers\CustomQueryController;
 use App\Http\Controllers\MedicalRecordRequestController;
 
 // Authentication Routes
@@ -74,7 +75,6 @@ Route::group([
 });
 Route::apiResource('admissions', AdmissionController::class)->middleware('role:dev|admin');
 
-Route::get('excequte_query', [AdmissionController::class, 'executeQuery'])->name('admissions.executeQuery');
 
 // Invoice Routes
 Route::group([
@@ -142,3 +142,7 @@ Route::group([
     Route::patch('/update', [MedicalRecordRequestController::class, 'updateMultiple'])->name('medical-records-requests.updateMultiple');
 });
 Route::apiResource('medical-records-requests', MedicalRecordRequestController::class)->middleware('role:dev|admin');
+
+
+
+Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
