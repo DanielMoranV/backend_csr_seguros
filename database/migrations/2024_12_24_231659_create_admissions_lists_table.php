@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('admissions_lists', function (Blueprint $table) {
             $table->id();
-            $table->string('admission_number');
+            $table->string('admission_number')->unique();
             $table->string('period');
             $table->date('start_date');
             $table->date('end_date');
