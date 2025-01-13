@@ -27,6 +27,7 @@ class CustomQueryController extends Controller
 
         try {
             $results = DB::connection('external_db')->select($query);
+            Log::debug($results);
             return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
         } catch (\Exception $e) {
             Log::error('Error executing query: ' . $e->getMessage());

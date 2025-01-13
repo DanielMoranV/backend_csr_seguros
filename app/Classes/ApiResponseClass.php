@@ -44,7 +44,8 @@ class ApiResponseClass
 
         $response = [
             'success' => true,
-            'data' => $result
+            'data' => $result,
+            'status' => $code,
         ];
 
         if (!empty($message)) {
