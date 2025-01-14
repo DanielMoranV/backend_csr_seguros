@@ -44,6 +44,10 @@ return [
             'prefix' => '',
             'strict' => true,
             'engine' => null,
+            'options' => [
+                PDO::ATTR_TIMEOUT => 300000,
+                PDO::ATTR_PERSISTENT => true, // Cambia el valor según el tiempo deseado (en segundos)
+            ],
         ],
 
         'sqlite' => [
