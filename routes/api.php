@@ -146,3 +146,4 @@ Route::apiResource('medical-records-requests', MedicalRecordRequestController::c
 
 
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
+Route::post('admissions_by_date_range', [CustomQueryController::class, 'getAdmissionsByDateRange'])->name('getAdmissionsByDateRange');
