@@ -71,4 +71,14 @@ class AuditController extends Controller
         $this->auditRepositoryInterface->delete($audit->id);
         return ApiResponseClass::sendResponse([], '', 200);
     }
+
+    public function getAuditsByAdmissions(Request $request)
+    {
+        $admissions = $request->input('admissions', []);
+        if (empty($admissions)) {
+            return ApiResponseClass::sendResponse([], 'Admissions are required.', 400);
+        }
+        $data = $this->auditRepositoryInterface->getAuditsByAdmissions($admissions);
+        return ApiResponseClass::sendResponse(AuditResource::collection($data), '', 200);
+    }
 }

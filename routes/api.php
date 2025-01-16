@@ -129,6 +129,7 @@ Route::group([
 ], function () {
     Route::post('/store', [AuditController::class, 'storeMultiple'])->name('audits.storeMultiple');
     Route::patch('/update', [AuditController::class, 'updateMultiple'])->name('audits.updateMultiple');
+    Route::post('/by-admissions', [AuditController::class, 'getAuditsByAdmissions'])->name('audits.getAuditsByAdmissions');
 });
 Route::apiResource('audits', AuditController::class)->middleware('role:dev|admin');
 

@@ -22,7 +22,7 @@ class StoreAuditRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'auditor' => 'required|string',
+            'auditor' => 'string',
             'description' => 'nullable|string',
             'admission_number' => 'required|string',
             'invoice_number' => 'nullable|string',

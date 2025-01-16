@@ -14,4 +14,13 @@ class AuditRepository extends BaseRepository implements AuditRepositoryInterface
     {
         parent::__construct($model);
     }
+
+    /**
+     * Get audits by admissions.
+     */
+    public function getAuditsByAdmissions($admissions = [])
+    {
+
+        return $this->model->whereIn('admission_number', $admissions)->get();
+    }
 }
