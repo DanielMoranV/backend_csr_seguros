@@ -30,7 +30,6 @@ class AdmissionController extends Controller
     {
         $data = "SELECT SC0011.num_doc as number, SC0011.fec_doc as attendance_date, SC0011.nom_pac as patient, SC0011.hi_doc as attendance_hour, SC0011.ta_doc as type, SC0011.tot_doc as amount, SC0003.nom_emp as company, SC0006.nom_ser as doctor, SC0004.nh_pac medical_record_number, SC0011.clos_doc as is_closed, SC0017.num_fac as invoice_number, SC0017.fec_fac as invoice_date, SC0017.uc_sis as biller, SC0033.fh_dev, SC0002.nom_cia as insurer_name FROM SC0011 LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc WHERE SC0011.fec_doc BETWEEN ctod('12-12-2024') AND ctod('12-12-2024') AND SC0002.nom_cia <> 'PARTICULAR' AND SC0004.nh_pac IS NOT NULL AND SC0004.nh_pac <> '' AND SC0011.nom_pac IS NOT NULL AND SC0011.nom_pac <> '' ORDER BY SC0011.cod_ser ASC;";
         $response = $this->apiSisclinService->executeQuery($data);
-        Log::info('Response from FastAPI: ' . $response->status());
         return ApiResponseClass::sendResponse($response->json()['data'], '', $response->status());
     }
 

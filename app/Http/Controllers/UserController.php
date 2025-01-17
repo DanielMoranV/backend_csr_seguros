@@ -95,7 +95,7 @@ class UserController extends Controller
 
         DB::beginTransaction();
         try {
-            Log::info($data);
+
             $this->userRepositoryInterface->update($data, $id);
             DB::commit();
             return ApiResponseClass::sendResponse($data, 'Record updated succesful', 200);

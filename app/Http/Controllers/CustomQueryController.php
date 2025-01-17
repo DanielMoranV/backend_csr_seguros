@@ -22,12 +22,9 @@ class CustomQueryController extends Controller
             return ApiResponseClass::sendResponse([], 'Invalid query.', 400);
         }
         $query = $request->input('query');
-
-        Log::debug($query);
-
         try {
             $results = DB::connection('external_db')->select($query);
-            Log::debug($results);
+
             return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
         } catch (\Exception $e) {
             Log::error('Error executing query: ' . $e->getMessage());

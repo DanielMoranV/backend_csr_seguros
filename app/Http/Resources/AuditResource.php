@@ -16,11 +16,13 @@ class AuditResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'created_at' => $this->created_at,
             'auditor' => $this->auditor,
             'status' => $this->status,
             'description' => $this->description,
             'admission_number' => $this->admission_number,
             'invoice_number' => $this->invoice_number,
+            'type' => $this->type,
             'admissions_list' => $this->whenLoaded('admissionsList', fn() => new AdmissionsListResource($this->admissionsList)),
 
         ];

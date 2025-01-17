@@ -23,4 +23,12 @@ class AuditRepository extends BaseRepository implements AuditRepositoryInterface
 
         return $this->model->whereIn('admission_number', $admissions)->get();
     }
+
+    /**
+     * Get audits by data range.
+     */
+    public function getAuditsByDateRange($from, $to)
+    {
+        return $this->model->whereBetween('created_at', [$from, $to])->get();
+    }
 }

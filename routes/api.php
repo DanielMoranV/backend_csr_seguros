@@ -93,7 +93,6 @@ Route::group([
 ], function () {
     Route::post('/store', [DevolutionController::class, 'storeMultiple'])->name('devolutions.storeMultiple');
     Route::patch('/update', [DevolutionController::class, 'updateMultiple'])->name('devolutions.updateMultiple');
-    Route::post('/date-range', [DevolutionController::class, 'devolutionByDataRange'])->name('devolutions.devolutionByDataRange');
 });
 Route::apiResource('devolutions', DevolutionController::class)->middleware('role:dev|admin');
 
@@ -130,6 +129,7 @@ Route::group([
     Route::post('/store', [AuditController::class, 'storeMultiple'])->name('audits.storeMultiple');
     Route::patch('/update', [AuditController::class, 'updateMultiple'])->name('audits.updateMultiple');
     Route::post('/by-admissions', [AuditController::class, 'getAuditsByAdmissions'])->name('audits.getAuditsByAdmissions');
+    Route::post('/by-date-range', [AuditController::class, 'getAuditsByDateRange'])->name('audits.getAuditsByDateRange');
 });
 Route::apiResource('audits', AuditController::class)->middleware('role:dev|admin');
 

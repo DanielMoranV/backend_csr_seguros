@@ -13,7 +13,8 @@ class Audit extends Model
         'description',
         'status',
         'admission_number',
-        'invoice_number'
+        'invoice_number',
+        'type',
     ];
 
     // Relación con la lista de admisiones
