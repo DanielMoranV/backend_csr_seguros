@@ -6,9 +6,13 @@ use App\Interfaces\MedicalRecordRequestRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\MedicalRecordRequestResource;
 use App\Classes\ApiResponseClass;
+use App\Http\Requests\StoreMedicalRecordRequestRequest;
 use App\Http\Requests\StoreMedicalRecordRequestsRequest;
+use App\Http\Requests\UpdateMedicalRecordRequestRequest;
 use App\Http\Requests\UpdateMedicalRecordRequestsRequest;
+use App\Models\MedicalRecordRequest;
 use Illuminate\Contracts\Cache\Store;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Request;
 
 class MedicalRecordRequestController extends Controller
@@ -36,18 +40,49 @@ class MedicalRecordRequestController extends Controller
         return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($data), '', 200);
     }
 
-    public function store(Request $request)
+    public function store(StoreMedicalRecordRequestRequest $request)
     {
-        $data = $request->all();
-        $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($data);
-        return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
+        try {
+            $data = $request->validated();
+            $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($data);
+            DB::commit();
+            return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateMedicalRecordRequestRequest $request, $id)
     {
-        $data = $request->all();
-        $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->update($id, $data);
-        return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
+        DB::beginTransaction();
+        try {
+            $data = $request->validated();
+            $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->update($data, $id);
+            DB::commit();
+            return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function getDateRange(Request $request)
+    {
+        $from = $request->input('from', '');
+        $to = $request->input('to', '');
+        if (empty($from) || empty($to)) {
+            return ApiResponseClass::sendResponse([], 'From and To dates are required.', 400);
+        }
+        DB::beginTransaction();
+        try {
+            $data = $this->medicalRecordRequestRepositoryInterface->getDateRange($from, $to);
+            DB::commit();
+            return ApiResponseClass::sendResponse(MedicalRecordRequestResource::collection($data), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
     }
 
     public function destroy($id)
@@ -124,6 +159,19 @@ class MedicalRecordRequestController extends Controller
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponseClass::sendResponse([], $e->getMessage(), 500);
+        }
+    }
+
+    public function getByMedicalRecordNumber($number)
+    {
+        if (empty($number)) {
+            return ApiResponseClass::sendResponse([], 'Medical record number is required.', 400);
+        }
+        try {
+            $data = $this->medicalRecordRequestRepositoryInterface->searchByMedicalRecordNumber($number);
+            return ApiResponseClass::sendResponse(MedicalRecordRequestResource::collection($data), '', 200);
+        } catch (\Exception $e) {
+            return ApiResponseClass::rollback($e);
         }
     }
 }

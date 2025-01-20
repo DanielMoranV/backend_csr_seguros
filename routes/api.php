@@ -141,6 +141,8 @@ Route::group([
 ], function () {
     Route::post('/store', [MedicalRecordRequestController::class, 'storeMultiple'])->name('medical-records-requests.storeMultiple');
     Route::patch('/update', [MedicalRecordRequestController::class, 'updateMultiple'])->name('medical-records-requests.updateMultiple');
+    Route::post('/by-date-range', [MedicalRecordRequestController::class, 'getDateRange'])->name('medical-records-requests.getDateRange');
+    Route::get('/by-medical-record-number/{number}', [MedicalRecordRequestController::class, 'getByMedicalRecordNumber'])->name('medical-records-requests.getByMedicalRecordNumber');
 });
 Route::apiResource('medical-records-requests', MedicalRecordRequestController::class)->middleware('role:dev|admin');
 

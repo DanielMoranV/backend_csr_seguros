@@ -14,4 +14,17 @@ class MedicalRecordRequestRepository extends BaseRepository implements MedicalRe
     {
         parent::__construct($model);
     }
+
+    /**
+     * Search records by medical record number using LIKE.
+     *
+     * @param string $medicalRecordNumber
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function searchByMedicalRecordNumber($medicalRecordNumber)
+    {
+        return $this->model->where('medical_record_number', 'LIKE', '%' . $medicalRecordNumber . '%')
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 }

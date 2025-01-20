@@ -16,7 +16,7 @@ return new class extends Migration
             $table->id();
             $table->string('requester_nick');
             $table->string('requested_nick')->nullable();
-            $table->string('admission_number');
+            $table->string('admission_number')->nullable();
             $table->string('medical_record_number')->nullable();
             $table->dateTime('request_date');
             $table->dateTime('response_date')->nullable();

@@ -64,4 +64,17 @@ class BaseRepository implements BaseRepositoryInterface
         }
         return $this->model::paginate($perPage);
     }
+
+    public function getDateRange($from = null, $to = null, $relations = [])
+    {
+        if (!empty($relations)) {
+            return $this->model::with($relations)
+                ->whereBetween('created_at', [$from, $to])
+                ->orderBy('created_at', 'desc')
+                ->get();
+        }
+        return $this->model->whereBetween('created_at', [$from, $to])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
 }

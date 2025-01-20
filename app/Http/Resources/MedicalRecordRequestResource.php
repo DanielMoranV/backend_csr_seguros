@@ -16,9 +16,10 @@ class MedicalRecordRequestResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'medical_record_number' => $this->medical_record_number,
             'requester_nick' => $this->requester_nick,
             'requested_nick' => $this->requested_nick,
-            'admision_number' => $this->admision_number,
+            'admission_number' => $this->admission_number,
             'request_date' => $this->request_date,
             'response_date' => $this->response_date,
             'remarks' => $this->remarks,

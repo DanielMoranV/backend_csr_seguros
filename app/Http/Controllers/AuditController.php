@@ -109,9 +109,7 @@ class AuditController extends Controller
             if (empty($from) || empty($to)) {
                 return ApiResponseClass::sendResponse([], 'From and To dates are required.', 400);
             }
-            Log::debug('From: ' . $from . ' To: ' . $to);
             $data = $this->auditRepositoryInterface->getAuditsByDateRange($from, $to);
-            Log::debug('Data: ' . $data);
             return ApiResponseClass::sendResponse(AuditResource::collection($data), '', 200);
         } catch (\Exception $e) {
             return ApiResponseClass::sendResponse([], $e->getMessage(), 500);

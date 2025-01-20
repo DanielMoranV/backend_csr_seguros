@@ -11,7 +11,7 @@ class UpdateMedicalRecordRequestRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return true;
     }
 
     /**
@@ -25,10 +25,11 @@ class UpdateMedicalRecordRequestRequest extends FormRequest
             'requester_nick' => 'nullable|string|max:255',
             'requested_nick' => 'nullable|string|max:255',
             'admission_number' => 'nullable|string|max:255',
-            'medical_record_number' => 'required|string|max:255',
+            'medical_record_number' => 'nullable|string|max:255',
             'request_date' => 'nullable|date',
             'response_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:255',
+            'status' => 'nullable|string|max:255',
         ];
     }
 }

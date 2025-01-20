@@ -12,4 +12,5 @@ interface BaseRepositoryInterface
     public function restore($id);
     public function bulkStore(array $data);
     public function getPaginated($relations = [], $perPage = 10);
+    public function getDateRange($from = null, $to = null, $relations = []);
 }
