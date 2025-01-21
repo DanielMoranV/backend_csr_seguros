@@ -28,7 +28,7 @@ class CreateAdmissionsListsRequest extends FormRequest
             '*.request_date' => 'required|date',
             '*.remarks' => 'nullable|string|max:255',
             '*.admissionList' => 'required|array',
-            '*.admissionList.admission_number' => 'required|string|max:255',
+            '*.admissionList.admission_number' => 'required|max:255',
             '*.admissionList.biller' => 'required|string|max:255',
             '*.admissionList.end_date' => 'required|date',
             '*.admissionList.start_date' => 'required|date',
