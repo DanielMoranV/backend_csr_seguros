@@ -180,7 +180,7 @@ class AdmissionsListController extends Controller
         // convertir a period en string antes de usarlo
         $period = (string) $period;
         $data = $this->admissionsListRepositoryInterface->getByPeriod($period, $this->relations);
-        return ApiResponseClass::sendResponse($data, '', 200);
+        return ApiResponseClass::sendResponse(AdmissionsListResource::collection($data), '', 200);
     }
 
     public function getAllPeriods()

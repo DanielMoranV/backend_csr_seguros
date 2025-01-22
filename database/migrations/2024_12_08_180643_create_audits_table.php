@@ -17,7 +17,7 @@ return new class extends Migration
             $table->string('admission_number');
             $table->string('invoice_number')->nullable();
             $table->string('auditor');
-            $table->string('description')->nullable();
+            $table->string('description', 500)->nullable();
             $table->enum('type', ['Regular', 'Devolucion'])->default('Regular');
             $table->enum('status', ['Aprobado', 'Con Observaciones', 'Rechazado', 'Pendiente'])->default('Pendiente');
             $table->timestamps();

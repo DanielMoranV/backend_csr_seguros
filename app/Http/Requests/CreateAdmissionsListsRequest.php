@@ -23,8 +23,8 @@ class CreateAdmissionsListsRequest extends FormRequest
     {
         return [
             '*.requester_nick' => 'required|string|max:255',
-            '*.admission_number' => 'nullable|string|max:255|unique:admissions_lists,admission_number',
-            '*.medical_record_number' => 'nullable|string|max:255',
+            '*.admission_number' => 'nullable|string|max:255',
+            '*.medical_record_number' => 'nullable|max:255',
             '*.request_date' => 'required|date',
             '*.remarks' => 'nullable|string|max:255',
             '*.admissionList' => 'required|array',

@@ -25,7 +25,7 @@ class StoreMedicalRecordRequestRequest extends FormRequest
             'requester_nick' => 'required|string|max:255',
             'requested_nick' => 'nullable|string|max:255',
             'admission_number' => 'nullable|string|max:255',
-            'medical_record_number' => 'required|string|max:255',
+            'medical_record_number' => 'required|max:255',
             'request_date' => 'required|date',
             'response_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:255',

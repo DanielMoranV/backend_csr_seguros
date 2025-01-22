@@ -35,6 +35,18 @@ class AdmissionsListsService
                     // si admission_number existe en la tabla admissions_lists no se debe permitir guardar y añadirlo a failedRecords
                     if ($this->admissionsListRepositoryInterface->exists('admission_number', $medicalRecordRequest['admission_number'])) {
                         $failedRecords[] = array_merge($medicalRecordRequest, ['error' => 'The admission_number has already been taken.']);
+
+                        // actualizar admissions_lists con los los campos biller end_date period start_date el campo identificador es admission_number
+                        $this->admissionsListRepositoryInterface->updateByAdmissionNumber(
+                            $medicalRecordRequest['admission_number'],
+                            [
+                                'biller' => $medicalRecordRequest['admissionList']['biller'],
+                                'end_date' => $medicalRecordRequest['admissionList']['end_date'],
+                                'period' => $medicalRecordRequest['admissionList']['period'],
+                                'start_date' => $medicalRecordRequest['admissionList']['start_date']
+                            ]
+                        );
+
                         continue;
                     }
                     $medicalRecordRequestData = [

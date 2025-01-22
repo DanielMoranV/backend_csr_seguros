@@ -24,6 +24,17 @@ class AdmissionsListRepository extends BaseRepository implements AdmissionsListR
         return $this->model->where($column, $value)->exists();
     }
 
+    public function updateByAdmissionNumber(string $admissionNumber, array $data): bool
+    {
+        $admission = $this->model->where('admission_number', $admissionNumber)->first();
+
+        if ($admission) {
+            return $admission->update($data);
+        }
+
+        return false;
+    }
+
     /**
      * Get by period
      */

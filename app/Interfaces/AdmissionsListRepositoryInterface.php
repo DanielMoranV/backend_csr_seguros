@@ -10,4 +10,6 @@ interface AdmissionsListRepositoryInterface extends BaseRepositoryInterface
     public function getByPeriod(string $period, array $relations = []);
     // funcion para obtener todos los periodos
     public function getAllPeriods();
+    // funcion para actualizar por admission_number
+    public function updateByAdmissionNumber(string $admissionNumber, array $data): bool;
 }

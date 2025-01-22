@@ -26,10 +26,8 @@ class AdmissionsListResource extends JsonResource
             'audit_requested_at' => $this->audit_requested_at,
             'audit_id' => $this->audit_id,
             'medical_record_request_id' => $this->medical_record_request_id,
-
-            'audits' => $this->whenLoaded('audits', fn() => $this->audits->isEmpty() ? null : AuditResource::collection($this->audits)),
-
-            'medical_record_requests' => $this->whenLoaded('medicalRecordRequest', fn() => new MedicalRecordRequestResource($this->medicalRecordRequest)),
+            'audit' => $this->whenLoaded('audit', fn() => new AuditResource($this->audit)),
+            'medical_record_request' => $this->whenLoaded('medicalRecordRequest', fn() => new MedicalRecordRequestResource($this->medicalRecordRequest)),
         ];
     }
 }
