@@ -11,6 +11,7 @@ use App\Interfaces\ShipmentRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+
 class ShipmentController extends Controller
 {
     protected $shipmentRepositoryInterface;
@@ -75,6 +76,25 @@ class ShipmentController extends Controller
             }
             DB::commit();
             return ApiResponseClass::sendResponse(ShipmentResource::collection($successfulRecords), '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function getDateRange(Request $request)
+    {
+        $from = $request->input('from', '');
+        $to = $request->input('to', '');
+        if (empty($from) || empty($to)) {
+            return ApiResponseClass::sendResponse([], 'Please provide both from and to date', 400);
+        }
+
+        DB::beginTransaction();
+        try {
+            $data = $this->shipmentRepositoryInterface->getDateRange($from, $to);
+            DB::commit();
+            return ApiResponseClass::sendResponse(ShipmentResource::collection($data), '', 200);
         } catch (\Exception $e) {
             DB::rollBack();
             return ApiResponseClass::rollback($e);

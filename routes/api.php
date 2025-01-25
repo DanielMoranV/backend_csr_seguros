@@ -13,6 +13,7 @@ use App\Http\Controllers\AdmissionsListController;
 use App\Http\Controllers\AuditController;
 use App\Http\Controllers\CustomQueryController;
 use App\Http\Controllers\MedicalRecordRequestController;
+use App\Http\Controllers\ShipmentController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -146,6 +147,14 @@ Route::group([
 });
 Route::apiResource('medical-records-requests', MedicalRecordRequestController::class)->middleware('role:dev|admin');
 
+// Shipments Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'shipments'
+], function () {
+    Route::post('/store', [ShipmentController::class, 'storeMultiple'])->name('shipments.storeMultiple');
+    Route::patch('/update', [ShipmentController::class, 'updateMultiple'])->name('shipments.updateMultiple');
+});
 
 
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
