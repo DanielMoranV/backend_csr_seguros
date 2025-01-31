@@ -14,4 +14,14 @@ class ShipmentControllerRepository extends BaseRepository implements ShipmentRep
     {
         parent::__construct($model);
     }
+
+    // actualizar por invoice_number
+    public function updateByInvoiceNumber(string $invoiceNumber, array $data): bool
+    {
+        $shipment = $this->model->where('invoice_number', $invoiceNumber)->first();
+        if ($shipment) {
+            return $shipment->update($data);
+        }
+        return false;
+    }
 }

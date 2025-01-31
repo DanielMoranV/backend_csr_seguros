@@ -22,17 +22,14 @@ class StoreShipmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'verified_shipment' => 'nullable|boolean',
-            'shipment_date' => 'nullable|date',
+            'verified_shipment_date' => 'nullable|date',
             'reception_date' => 'nullable|date',
-            'invoice_id' => 'required|exists:invoices,id',
+            'invoice_number' => 'required|string|max:255',
             'remarks' => 'nullable|string|max:255',
-            'trama_verified' => 'nullable|boolean',
             'trama_date' => 'nullable|date',
-            'courier_verified' => 'nullable|boolean',
             'courier_date' => 'nullable|date',
-            'email_verified' => 'nullable|boolean',
             'email_verified_date' => 'nullable|date',
+            'url_sustenance' => 'nullable|string|max:255'
         ];
     }
 }

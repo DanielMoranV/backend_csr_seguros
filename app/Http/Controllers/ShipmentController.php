@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Classes\ApiResponseClass;
+use App\Http\Requests\CreateShipmentRequest;
 use App\Http\Requests\StoreShipmentRequest;
 use App\Http\Requests\StoreShipmentsRequest;
 use App\Http\Requests\UpdateShipmentRequest;
@@ -99,5 +100,15 @@ class ShipmentController extends Controller
             DB::rollBack();
             return ApiResponseClass::rollback($e);
         }
+    }
+
+    public function createAndUpdateShipment(CreateShipmentRequest $request)
+    {
+
+        $data = $request->validated();
+        $newsShipment = $data['newshipments'];
+        $successfulRecords = [];
+        $failedRecords = [];
+        DB::beginTransaction();
     }
 }
