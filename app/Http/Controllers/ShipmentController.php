@@ -106,9 +106,52 @@ class ShipmentController extends Controller
     {
 
         $data = $request->validated();
-        $newsShipment = $data['newshipments'];
+        $newShipments = $data['newShipments'];
+        $updateshipments = $data['updatedShipments'];
         $successfulRecords = [];
         $failedRecords = [];
         DB::beginTransaction();
+
+        try {
+            foreach ($newShipments as $shipment) {
+                try {
+                    $fields = ['verified_shipment', 'shipment_date', 'invoice_id', 'remarks', 'trama_verified', 'trama_date', 'courier_verified', 'courier_date', 'email_verified', 'email_verified_date'];
+                    $shipment = array_filter(
+                        array_intersect_key($shipment, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
+                    $newShipment = $this->shipmentRepositoryInterface->store($shipment);
+                    $successfulRecords[] = $newShipment;
+                } catch (\Exception $e) {
+                    $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
+                }
+            }
+            foreach ($updateshipments as $shipment) {
+                try {
+                    $fields = ['verified_shipment', 'shipment_date', 'invoice_id', 'remarks', 'trama_verified', 'trama_date', 'courier_verified', 'courier_date', 'email_verified', 'email_verified_date'];
+                    $shipment = array_filter(
+                        array_intersect_key($shipment, array_flip($fields)),
+                        fn($value) => $value !== null
+                    );
+                    $updatedShipment = $this->shipmentRepositoryInterface->update($shipment, $shipment['id']);
+                    $successfulRecords[] = $updatedShipment;
+                } catch (\Exception $e) {
+                    $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
+                }
+            }
+            if (empty($successfulRecords)) {
+                throw new \Exception('No records were created or updated');
+            }
+            DB::commit();
+            $response = [
+                'success' => $successfulRecords,
+                'errors' => $failedRecords,
+                'message' => 'Processing complete'
+            ];
+            return ApiResponseClass::sendResponse($response, '', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::rollback($e);
+        }
     }
 }
