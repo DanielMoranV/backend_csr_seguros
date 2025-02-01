@@ -21,8 +21,10 @@ use App\Interfaces\SettlementRepositoryInterface;
 use App\repositories\SettlementControllerRepository;
 use App\Interfaces\AdmissionsListRepositoryInterface;
 use App\Interfaces\MedicalRecordRequestRepositoryInterface;
+use App\Interfaces\ShipmentRepositoryInterface;
 use App\Repositories\AdmissionsListRepository;
 use App\Repositories\MedicalRecordRequestRepository;
+use App\Repositories\ShipmentControllerRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -41,6 +43,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(SettlementRepositoryInterface::class, SettlementControllerRepository::class);
         $this->app->bind(AdmissionsListRepositoryInterface::class, AdmissionsListRepository::class);
         $this->app->bind(MedicalRecordRequestRepositoryInterface::class, MedicalRecordRequestRepository::class);
+        $this->app->bind(ShipmentRepositoryInterface::class, ShipmentControllerRepository::class);
     }
 
     /**

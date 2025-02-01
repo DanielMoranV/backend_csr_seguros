@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use App\Classes\ApiResponseClass;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Support\Facades\Log;
 
 class CreateShipmentRequest extends FormRequest
 {
@@ -24,22 +25,22 @@ class CreateShipmentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'newShipments' => 'required|array',
+            'newShipments' => 'nullable|array',
             'newShipments.*.verified_shipment_date' => 'nullable|date',
-            'newShipments.*.invoice_number' => 'required|string|max:255',
+            'newShipments.*.invoice_number' => 'nullable|string|max:255',
             'newShipments.*.remarks' => 'nullable|string|max:255',
             'newShipments.*.trama_date' => 'nullable|date',
             'newShipments.*.courier_date' => 'nullable|date',
             'newShipments.*.email_verified_date' => 'nullable|date',
             'newShipments.*.url_sustenance' => 'nullable|string|max:255',
-            'updatesShipments' => 'required|array',
-            'updatesShipments.*.verified_shipment_date' => 'nullable|date',
-            'updatesShipments.*.invoice_number' => 'required|string|max:255',
-            'updatesShipments.*.remarks' => 'nullable|string|max:255',
-            'updatesShipments.*.trama_date' => 'nullable|date',
-            'updatesShipments.*.courier_date' => 'nullable|date',
-            'updatesShipments.*.email_verified_date' => 'nullable|date',
-            'updatesShipments.*.url_sustenance' => 'nullable|string|max:255'
+            'updatedShipments' => 'nullable|array',
+            'updatedShipments.*.verified_shipment_date' => 'nullable|date',
+            'updatedShipments.*.invoice_number' => 'nullable|string|max:255',
+            'updatedShipments.*.remarks' => 'nullable|string|max:255',
+            'updatedShipments.*.trama_date' => 'nullable|date',
+            'updatedShipments.*.courier_date' => 'nullable|date',
+            'updatedShipments.*.email_verified_date' => 'nullable|date',
+            'updatedShipments.*.url_sustenance' => 'nullable|string|max:255'
         ];
     }
 

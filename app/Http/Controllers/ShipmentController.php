@@ -11,7 +11,7 @@ use App\Http\Resources\ShipmentResource;
 use App\Interfaces\ShipmentRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Support\Facades\Log;
 
 class ShipmentController extends Controller
 {
@@ -104,43 +104,34 @@ class ShipmentController extends Controller
 
     public function createAndUpdateShipment(CreateShipmentRequest $request)
     {
-
         $data = $request->validated();
+
+        Log::debug('DATA', $data);
         $newShipments = $data['newShipments'];
-        $updateshipments = $data['updatedShipments'];
+        $updatedShipments = $data['updatedShipments'];
+
+        Log::debug('NEW SHIPMENTS', $newShipments);
+        Log::debug('UPDATED SHIPMENTS', $updatedShipments);
+
         $successfulRecords = [];
         $failedRecords = [];
         DB::beginTransaction();
-
         try {
             foreach ($newShipments as $shipment) {
                 try {
-                    $fields = ['verified_shipment', 'shipment_date', 'invoice_id', 'remarks', 'trama_verified', 'trama_date', 'courier_verified', 'courier_date', 'email_verified', 'email_verified_date'];
-                    $shipment = array_filter(
-                        array_intersect_key($shipment, array_flip($fields)),
-                        fn($value) => $value !== null
-                    );
                     $newShipment = $this->shipmentRepositoryInterface->store($shipment);
                     $successfulRecords[] = $newShipment;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
                 }
             }
-            foreach ($updateshipments as $shipment) {
+            foreach ($updatedShipments as $shipment) {
                 try {
-                    $fields = ['verified_shipment', 'shipment_date', 'invoice_id', 'remarks', 'trama_verified', 'trama_date', 'courier_verified', 'courier_date', 'email_verified', 'email_verified_date'];
-                    $shipment = array_filter(
-                        array_intersect_key($shipment, array_flip($fields)),
-                        fn($value) => $value !== null
-                    );
-                    $updatedShipment = $this->shipmentRepositoryInterface->update($shipment, $shipment['id']);
+                    $updatedShipment = $this->shipmentRepositoryInterface->updateByInvoiceNumber($shipment, $shipment['invoice_number']);
                     $successfulRecords[] = $updatedShipment;
                 } catch (\Exception $e) {
-                    $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
+                    $failedRecords[] = array_merge($updatedShipment, ['error' => $e->getMessage()]);
                 }
-            }
-            if (empty($successfulRecords)) {
-                throw new \Exception('No records were created or updated');
             }
             DB::commit();
             $response = [
@@ -148,10 +139,10 @@ class ShipmentController extends Controller
                 'errors' => $failedRecords,
                 'message' => 'Processing complete'
             ];
-            return ApiResponseClass::sendResponse($response, '', 200);
+            return ApiResponseClass::sendResponse($response, 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::sendResponse([], $e->getMessage(), 500);
         }
     }
 }
