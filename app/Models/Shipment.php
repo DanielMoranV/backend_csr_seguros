@@ -12,6 +12,7 @@ class Shipment extends Model
     protected $fillable = [
         'verified_shipment_date', // Fecha de envío
         'reception_date', // Fecha de recepción
+        'admission_number', // Número de la admisión
         'invoice_number', // Número de la factura
         'remarks', // Observaciones
         'trama_date', // Fecha de verificación por trama

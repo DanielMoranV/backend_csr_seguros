@@ -28,6 +28,7 @@ class AdmissionsListResource extends JsonResource
             'medical_record_request_id' => $this->medical_record_request_id,
             'audit' => $this->whenLoaded('audit', fn() => new AuditResource($this->audit)),
             'medical_record_request' => $this->whenLoaded('medicalRecordRequest', fn() => new MedicalRecordRequestResource($this->medicalRecordRequest)),
+            'shipment' => $this->whenLoaded('shipment', fn() => new ShipmentResource($this->shipment)),
         ];
     }
 }

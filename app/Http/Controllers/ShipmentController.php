@@ -8,6 +8,7 @@ use App\Http\Requests\StoreShipmentRequest;
 use App\Http\Requests\StoreShipmentsRequest;
 use App\Http\Requests\UpdateShipmentRequest;
 use App\Http\Resources\ShipmentResource;
+use App\Interfaces\AdmissionsListRepositoryInterface;
 use App\Interfaces\ShipmentRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,11 +17,13 @@ use Illuminate\Support\Facades\Log;
 class ShipmentController extends Controller
 {
     protected $shipmentRepositoryInterface;
+    protected $admissionsListRepositoryInterface;
     protected $relations = ['invoice'];
 
-    public function __construct(ShipmentRepositoryInterface $shipmentRepositoryInterface)
+    public function __construct(AdmissionsListRepositoryInterface $admissionsListRepositoryInterface, ShipmentRepositoryInterface $shipmentRepositoryInterface)
     {
         $this->shipmentRepositoryInterface = $shipmentRepositoryInterface;
+        $this->admissionsListRepositoryInterface = $admissionsListRepositoryInterface;
     }
 
     public function index()
@@ -121,13 +124,16 @@ class ShipmentController extends Controller
                 try {
                     $newShipment = $this->shipmentRepositoryInterface->store($shipment);
                     $successfulRecords[] = $newShipment;
+
+                    // Editar admissions_lists en el campo shipment_id
+                    $this->admissionsListRepositoryInterface->updateByAdmissionNumber($shipment['admission_number'], ['shipment_id' => $newShipment->id]);
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($shipment, ['error' => $e->getMessage()]);
                 }
             }
             foreach ($updatedShipments as $shipment) {
                 try {
-                    $updatedShipment = $this->shipmentRepositoryInterface->updateByInvoiceNumber($shipment, $shipment['invoice_number']);
+                    $updatedShipment = $this->shipmentRepositoryInterface->updateByInvoiceNumber($shipment['invoice_number'], $shipment);
                     $successfulRecords[] = $updatedShipment;
                 } catch (\Exception $e) {
                     $failedRecords[] = array_merge($updatedShipment, ['error' => $e->getMessage()]);
