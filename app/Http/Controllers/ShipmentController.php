@@ -38,6 +38,12 @@ class ShipmentController extends Controller
         return ApiResponseClass::sendResponse(new ShipmentResource($data), '', 200);
     }
 
+    public function showByAdmissionNumber(string $admissionNumber)
+    {
+        $data = $this->shipmentRepositoryInterface->getByAdmissionNumber($admissionNumber);
+        return ApiResponseClass::sendResponse(ShipmentResource::collection($data), '', 200);
+    }
+
     public function store(StoreShipmentRequest $request)
     {
         $data = $request->validated();
@@ -97,6 +103,7 @@ class ShipmentController extends Controller
         DB::beginTransaction();
         try {
             $data = $this->shipmentRepositoryInterface->getDateRange($from, $to);
+
             DB::commit();
             return ApiResponseClass::sendResponse(ShipmentResource::collection($data), '', 200);
         } catch (\Exception $e) {

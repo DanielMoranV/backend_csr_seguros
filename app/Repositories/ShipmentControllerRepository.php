@@ -24,4 +24,10 @@ class ShipmentControllerRepository extends BaseRepository implements ShipmentRep
         }
         return false;
     }
+
+    // mostrar por admission_number
+    public function getByAdmissionNumber(string $admissionNumber)
+    {
+        return $this->model->where('admission_number', 'LIKE', "%{$admissionNumber}%")->get();
+    }
 }

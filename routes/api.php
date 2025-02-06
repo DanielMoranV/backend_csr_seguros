@@ -156,6 +156,7 @@ Route::group([
     Route::patch('/update', [ShipmentController::class, 'updateMultiple'])->name('shipments.updateMultiple');
     Route::post('/create-and-update', [ShipmentController::class, 'createAndUpdateShipment'])->name('shipments.createAndUpdateShipment');
     Route::post('/by-date-range', [ShipmentController::class, 'getDateRange'])->name('shipments.getDateRange');
+    Route::get('/by-admission-number/{admissionNumber}', [ShipmentController::class, 'showByAdmissionNumber'])->name('shipments.showByAdmissionNumber');
 });
 
 
