@@ -155,6 +155,7 @@ Route::group([
     Route::post('/store', [ShipmentController::class, 'storeMultiple'])->name('shipments.storeMultiple');
     Route::patch('/update', [ShipmentController::class, 'updateMultiple'])->name('shipments.updateMultiple');
     Route::post('/create-and-update', [ShipmentController::class, 'createAndUpdateShipment'])->name('shipments.createAndUpdateShipment');
+    Route::post('/by-date-range', [ShipmentController::class, 'getDateRange'])->name('shipments.getDateRange');
 });
 
 
