@@ -159,6 +159,8 @@ Route::group([
     Route::get('/by-admission-number/{admissionNumber}', [ShipmentController::class, 'showByAdmissionNumber'])->name('shipments.showByAdmissionNumber');
 });
 
+Route::apiResource('shipments', ShipmentController::class)->middleware('role:dev|admin');
+
 
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
 Route::post('admissions_by_date_range', [CustomQueryController::class, 'getAdmissionsByDateRange'])->name('getAdmissionsByDateRange');

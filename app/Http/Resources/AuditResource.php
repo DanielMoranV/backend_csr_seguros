@@ -19,6 +19,7 @@ class AuditResource extends JsonResource
             'created_at' => $this->created_at,
             'auditor' => $this->auditor,
             'status' => $this->status,
+            'url' => $this->url,
             'description' => $this->description,
             'admission_number' => $this->admission_number,
             'invoice_number' => $this->invoice_number,

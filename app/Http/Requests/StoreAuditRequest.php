@@ -25,6 +25,7 @@ class StoreAuditRequest extends FormRequest
             'auditor' => 'string',
             'description' => 'nullable|string',
             'admission_number' => 'required|string',
+            'url' => 'nullable|string',
             'invoice_number' => 'nullable|string',
             'type' => 'required|in:Regular,Devolucion',
             'status' => 'required|in:Aprobado,Con Observaciones,Rechazado,Pendiente',

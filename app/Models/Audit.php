@@ -12,6 +12,7 @@ class Audit extends Model
         'auditor',
         'description',
         'status',
+        'url',
         'admission_number',
         'invoice_number',
         'type',

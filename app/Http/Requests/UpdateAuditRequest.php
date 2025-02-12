@@ -24,6 +24,7 @@ class UpdateAuditRequest extends FormRequest
         return [
             'auditor' => 'nullable|string',
             'description' => 'nullable|string',
+            'url' => 'nullable|string',
             'status' => 'nullable|string',
             'admission_number' => 'nullable|string',
             'invoice_number' => 'nullable|string',

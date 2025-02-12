@@ -18,7 +18,7 @@ class ShipmentController extends Controller
 {
     protected $shipmentRepositoryInterface;
     protected $admissionsListRepositoryInterface;
-    protected $relations = ['invoice'];
+    protected $relations = ['admissionsList'];
 
     public function __construct(AdmissionsListRepositoryInterface $admissionsListRepositoryInterface, ShipmentRepositoryInterface $shipmentRepositoryInterface)
     {
