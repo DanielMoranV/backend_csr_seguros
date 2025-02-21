@@ -22,6 +22,8 @@ class MedicalRecordRequestResource extends JsonResource
             'admission_number' => $this->admission_number,
             'request_date' => $this->request_date,
             'response_date' => $this->response_date,
+            'confirmed_receipt_date' => $this->confirmed_receipt_date,
+            'confirmed_return_date' => $this->confirmed_return_date,
             'remarks' => $this->remarks,
             'status' => $this->status,
         ];

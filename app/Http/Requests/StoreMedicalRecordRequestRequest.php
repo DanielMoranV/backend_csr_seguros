@@ -28,6 +28,9 @@ class StoreMedicalRecordRequestRequest extends FormRequest
             'medical_record_number' => 'required|max:255',
             'request_date' => 'required|date',
             'response_date' => 'nullable|date',
+            'confirmed_receipt_date' => 'nullable|date',
+            'confirmed_return_date' => 'nullable|date',
+            'status' => 'required|string|max:255',
             'remarks' => 'nullable|string|max:255',
         ];
     }

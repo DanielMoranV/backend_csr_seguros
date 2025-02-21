@@ -16,6 +16,8 @@ class MedicalRecordRequest extends Model
         'medical_record_number',
         'request_date',
         'response_date',
+        'confirmed_receipt_date',
+        'confirmed_return_date',
         'remarks',
         'status',
     ];
