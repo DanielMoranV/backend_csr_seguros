@@ -28,6 +28,8 @@ class UpdateMedicalRecordRequestsRequest extends FormRequest
             '*.medical_record_number' => 'required|string|max:255',
             '*.request_date' => 'nullable|date',
             '*.response_date' => 'nullable|date',
+            '*.confirmed_receipt_date' => 'nullable|date',
+            '*.confirmed_return_date' => 'nullable|date',
             '*.remarks' => 'nullable|string|max:255',
         ];
     }

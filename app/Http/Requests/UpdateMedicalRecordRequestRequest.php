@@ -28,6 +28,8 @@ class UpdateMedicalRecordRequestRequest extends FormRequest
             'medical_record_number' => 'nullable|string|max:255',
             'request_date' => 'nullable|date',
             'response_date' => 'nullable|date',
+            'confirmed_receipt_date' => 'nullable|date',
+            'confirmed_return_date' => 'nullable|date',
             'remarks' => 'nullable|string|max:255',
             'status' => 'nullable|string|max:255',
         ];
