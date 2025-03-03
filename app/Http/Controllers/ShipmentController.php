@@ -115,13 +115,8 @@ class ShipmentController extends Controller
     public function createAndUpdateShipment(CreateShipmentRequest $request)
     {
         $data = $request->validated();
-
-        Log::debug('DATA', $data);
         $newShipments = $data['newShipments'];
         $updatedShipments = $data['updatedShipments'];
-
-        Log::debug('NEW SHIPMENTS', $newShipments);
-        Log::debug('UPDATED SHIPMENTS', $updatedShipments);
 
         $successfulRecords = [];
         $failedRecords = [];
