@@ -22,6 +22,7 @@ class StoreShipmentRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'admission_number' => 'required|string|max:255',
             'verified_shipment_date' => 'nullable|date',
             'reception_date' => 'nullable|date',
             'invoice_number' => 'required|string|max:255',
