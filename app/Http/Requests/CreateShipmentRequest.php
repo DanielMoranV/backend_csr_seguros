@@ -35,6 +35,7 @@ class CreateShipmentRequest extends FormRequest
             'newShipments.*.email_verified_date' => 'nullable|date',
             'newShipments.*.url_sustenance' => 'nullable|string|max:255',
             'updatedShipments' => 'nullable|array',
+            'updatedShipments.*.admission_number' => 'nullable|string|max:255',
             'updatedShipments.*.verified_shipment_date' => 'nullable|date',
             'updatedShipments.*.invoice_number' => 'nullable|string|max:255',
             'updatedShipments.*.remarks' => 'nullable|string|max:255',

@@ -134,11 +134,23 @@ class ShipmentController extends Controller
                 }
             }
             foreach ($updatedShipments as $shipment) {
+
                 try {
                     $updatedShipment = $this->shipmentRepositoryInterface->updateByInvoiceNumber($shipment['invoice_number'], $shipment);
-                    $successfulRecords[] = $updatedShipment;
+
+                    // Si updatedShipment es false significa que no se ha actualizado por lo que agregamos un nuevo registro
+                    if ($updatedShipment === false) {
+
+                        $newShipment = $this->shipmentRepositoryInterface->store($shipment);
+                        $successfulRecords[] = $newShipment;
+                        // Editar admissions_lists en el campo shipment_id
+                        $this->admissionsListRepositoryInterface->updateByAdmissionNumber($shipment['admission_number'], ['shipment_id' => $newShipment->id]);
+                    } else {
+                        $successfulRecords[] = $updatedShipment;
+                    }
                 } catch (\Exception $e) {
-                    $failedRecords[] = array_merge($updatedShipment, ['error' => $e->getMessage()]);
+
+                    $failedRecords[] = array_merge(is_array($updatedShipment) ? $updatedShipment : [], ['error' => $e->getMessage()]);
                 }
             }
             DB::commit();
