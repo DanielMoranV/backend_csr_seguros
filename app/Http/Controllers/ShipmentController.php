@@ -48,6 +48,8 @@ class ShipmentController extends Controller
     {
         $data = $request->validated();
         $shipment = $this->shipmentRepositoryInterface->store($data);
+        // Editar admissions_lists en el campo shipment_id
+        $this->admissionsListRepositoryInterface->updateByAdmissionNumber($shipment['admission_number'], ['shipment_id' => $shipment->id]);
         return ApiResponseClass::sendResponse(new ShipmentResource($shipment), '', 200);
     }
 
