@@ -44,6 +44,17 @@ class ShipmentController extends Controller
         return ApiResponseClass::sendResponse(ShipmentResource::collection($data), '', 200);
     }
 
+    public function showByAdmissionsList(Request $request)
+    {
+        $admissionsList = $request->input('admissionsList');
+        // verificar que los admissionsList es un array
+        if (!is_array($admissionsList)) {
+            return ApiResponseClass::sendResponse([], 'Please provide an array of admissionsList', 400);
+        }
+        $data = $this->shipmentRepositoryInterface->getByAdmissionsList($admissionsList);
+        return ApiResponseClass::sendResponse(ShipmentResource::collection($data), '', 200);
+    }
+
     public function store(StoreShipmentRequest $request)
     {
         $data = $request->validated();

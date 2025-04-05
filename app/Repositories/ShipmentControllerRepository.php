@@ -30,4 +30,10 @@ class ShipmentControllerRepository extends BaseRepository implements ShipmentRep
     {
         return $this->model->where('admission_number', 'LIKE', "%{$admissionNumber}%")->get();
     }
+
+    // mostrar por lista de admisiones
+    public function getByAdmissionsList(array $admissionsList)
+    {
+        return $this->model->whereIn('admission_number', $admissionsList)->get();
+    }
 }

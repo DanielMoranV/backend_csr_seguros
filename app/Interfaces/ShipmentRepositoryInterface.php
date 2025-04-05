@@ -9,4 +9,7 @@ interface ShipmentRepositoryInterface extends BaseRepositoryInterface
 
     // mostrar por admission_number
     public function getByAdmissionNumber(string $admissionNumber);
+
+    // mostrar por lista de admisiones
+    public function getByAdmissionsList(array $admissionsList);
 }

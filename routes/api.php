@@ -157,6 +157,7 @@ Route::group([
     Route::post('/create-and-update', [ShipmentController::class, 'createAndUpdateShipment'])->name('shipments.createAndUpdateShipment');
     Route::post('/by-date-range', [ShipmentController::class, 'getDateRange'])->name('shipments.getDateRange');
     Route::get('/by-admission-number/{admissionNumber}', [ShipmentController::class, 'showByAdmissionNumber'])->name('shipments.showByAdmissionNumber');
+    Route::post('/by-admissions-list', [ShipmentController::class, 'showByAdmissionsList'])->name('shipments.showByAdmissionsList');
 });
 
 Route::apiResource('shipments', ShipmentController::class)->middleware('role:dev|admin');
