@@ -6,6 +6,7 @@ use App\Interfaces\MedicalRecordRequestRepositoryInterface;
 use Illuminate\Support\Facades\DB;
 use App\Http\Resources\MedicalRecordRequestResource;
 use App\Classes\ApiResponseClass;
+use App\Events\RequestSent;
 use App\Http\Requests\StoreMedicalRecordRequestRequest;
 use App\Http\Requests\StoreMedicalRecordRequestsRequest;
 use App\Http\Requests\UpdateMedicalRecordRequestRequest;
@@ -46,6 +47,11 @@ class MedicalRecordRequestController extends Controller
             $data = $request->validated();
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($data);
             DB::commit();
+
+            // aqui quiero que se emita un evento para que el front end se actualice
+
+            Log::info('Evento RequestSent emitido');
+            event(new RequestSent($medicalRecordRequest));
             return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
         } catch (\Exception $e) {
             DB::rollBack();
