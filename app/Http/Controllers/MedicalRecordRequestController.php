@@ -37,7 +37,7 @@ class MedicalRecordRequestController extends Controller
 
     public function show($id)
     {
-        $data = $this->medicalRecordRequestRepositoryInterface->getById($id, $this->relations);
+        $data = $this->medicalRecordRequestRepositoryInterface->getById($id);
         return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($data), '', 200);
     }
 
@@ -48,9 +48,6 @@ class MedicalRecordRequestController extends Controller
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($data);
             DB::commit();
 
-            // aqui quiero que se emita un evento para que el front end se actualice
-
-            Log::info('Evento RequestSent emitido');
             event(new RequestSent($medicalRecordRequest));
             return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
         } catch (\Exception $e) {
@@ -66,6 +63,9 @@ class MedicalRecordRequestController extends Controller
             $data = $request->validated();
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->update($data, $id);
             DB::commit();
+
+            event(new RequestSent($medicalRecordRequest));
+
             return ApiResponseClass::sendResponse(new MedicalRecordRequestResource($medicalRecordRequest), '', 200);
         } catch (\Exception $e) {
             DB::rollBack();

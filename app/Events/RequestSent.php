@@ -19,7 +19,7 @@ class RequestSent implements ShouldBroadcast
     public function __construct(MedicalRecordRequest $medicalRecordRequest)
     {
         // Solo los datos necesarios, evita pasar el modelo entero
-        $this->requestData = $medicalRecordRequest->only(['id', 'paciente_id', 'fecha_solicitud', 'estado']);
+        $this->requestData = $medicalRecordRequest->only(['id']);
         $this->userId = auth()->id(); // mejor usar request()->user()->id si estás en contexto de request
     }
 
