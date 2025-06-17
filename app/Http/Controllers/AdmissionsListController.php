@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\DB;
 use App\Models\AdmissionsList;
 use App\Services\AdmissionsListsService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 class AdmissionsListController extends Controller
 {
@@ -50,7 +49,7 @@ class AdmissionsListController extends Controller
      */
     public function store(StoreAdmissionListRequest $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
         $admissionsList = $this->admissionsListRepositoryInterface->store($data);
         return ApiResponseClass::sendResponse(new AdmissionsListResource($admissionsList), '', 200);
     }
@@ -60,7 +59,8 @@ class AdmissionsListController extends Controller
      */
     public function show(AdmissionsList $admissionsList)
     {
-        Log::debug('SHOW');
+        $data = $this->admissionsListRepositoryInterface->getById($admissionsList->id, $this->relations);
+        return ApiResponseClass::sendResponse(new AdmissionsListResource($data), '', 200);
     }
 
     /**
@@ -86,13 +86,20 @@ class AdmissionsListController extends Controller
      */
     public function destroy(string $id)
     {
-        $this->admissionsListRepositoryInterface->delete($id);
-        return ApiResponseClass::sendResponse([], 'deleted successfully', 200);
+        DB::beginTransaction();
+        try {
+            $this->admissionsListRepositoryInterface->delete($id);
+            DB::commit();
+            return ApiResponseClass::sendResponse([], 'deleted successfully', 200);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
+        }
     }
 
     public function storeMultiple(StoreAdmissionsListsRequest $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
         $successfulRecords = [];
         $failedRecords = [];
         DB::beginTransaction();
@@ -132,7 +139,7 @@ class AdmissionsListController extends Controller
 
     public function updateMultiple(Request $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
         $successfulRecords = [];
         $failedRecords = [];
         DB::beginTransaction();

@@ -58,7 +58,7 @@ class AdmissionController extends Controller
             return ApiResponseClass::sendResponse(new AdmissionResource($admission), '', 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
         }
     }
 
@@ -72,7 +72,7 @@ class AdmissionController extends Controller
             return ApiResponseClass::sendResponse(new AdmissionResource($admission), '', 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
         }
     }
 
@@ -85,13 +85,13 @@ class AdmissionController extends Controller
             return ApiResponseClass::sendResponse(null, '', 200);
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
         }
     }
 
     public function storeMultiple(StoreAdmissionsRequest $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
         $batchSize = 500; // Tamaño del bloque
 
         $successfulRecords = [];
@@ -122,7 +122,7 @@ class AdmissionController extends Controller
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
         }
     }
 
@@ -164,7 +164,7 @@ class AdmissionController extends Controller
 
     public function updateMultiple(UpdateAdmissionRequest $request)
     {
-        $data = $request->all();
+        $data = $request->validated();
 
         $successfulRecords = [];
         $failedRecords = [];
@@ -223,7 +223,7 @@ class AdmissionController extends Controller
             );
         } catch (\Exception $e) {
             DB::rollBack();
-            return ApiResponseClass::rollback($e);
+            return ApiResponseClass::errorResponse($e->getMessage(), $e->getCode());
         }
     }
 }

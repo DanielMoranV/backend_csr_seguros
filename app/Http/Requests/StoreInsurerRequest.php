@@ -32,6 +32,6 @@ class StoreInsurerRequest extends FormRequest
 
     public function failedValidation(Validator $validator)
     {
-        ApiResponseClass::validationError($validator, $this->all());
+        ApiResponseClass::validationError($validator, []);
     }
 }
