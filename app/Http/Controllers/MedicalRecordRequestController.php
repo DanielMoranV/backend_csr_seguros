@@ -60,7 +60,10 @@ class MedicalRecordRequestController extends Controller
     {
         DB::beginTransaction();
         try {
-            $data = $request->validated();
+            $data = array_filter($request->validated(), function($value) {
+                return $value !== null;
+            });
+            
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->update($data, $id);
             DB::commit();
 

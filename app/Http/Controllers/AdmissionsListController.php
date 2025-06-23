@@ -15,13 +15,28 @@ use App\Models\AdmissionsList;
 use App\Services\AdmissionsListsService;
 use Illuminate\Http\Request;
 
+/**
+ * Controlador para gestionar las listas de admisión.
+ * Proporciona endpoints para operaciones CRUD y manejo masivo de listas de admisión.
+ */
 class AdmissionsListController extends Controller
 {
+    /**
+     * Interfaz del repositorio de listas de admisión para acceso a datos.
+     */
     protected $admissionsListRepositoryInterface;
+    /**
+     * Servicio para operaciones avanzadas o personalizadas sobre listas de admisión.
+     */
     protected $admissionsListsService;
-
+    /**
+     * Relaciones que se cargan junto con la lista de admisión.
+     */
     protected $relations = ['shipment', 'audit', 'medicalRecordRequest'];
 
+    /**
+     * Constructor: inyecta dependencias del repositorio y servicio.
+     */
     public function __construct(AdmissionsListRepositoryInterface $admissionsListRepositoryInterface, AdmissionsListsService $admissionsListsService)
     {
         $this->admissionsListRepositoryInterface = $admissionsListRepositoryInterface;
@@ -29,6 +44,10 @@ class AdmissionsListController extends Controller
     }
     /**
      * Display a listing of the resource.
+     */
+    /**
+     * Muestra una lista de todas las listas de admisión.
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
@@ -39,6 +58,9 @@ class AdmissionsListController extends Controller
     /**
      * Show the form for creating a new resource.
      */
+    /**
+     * Muestra el formulario para crear una nueva lista de admisión (no implementado para API).
+     */
     public function create()
     {
         //
@@ -46,6 +68,11 @@ class AdmissionsListController extends Controller
 
     /**
      * Store a newly created resource in storage.
+     */
+    /**
+     * Almacena una nueva lista de admisión en la base de datos.
+     * @param StoreAdmissionListRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
     public function store(StoreAdmissionListRequest $request)
     {
@@ -57,6 +84,11 @@ class AdmissionsListController extends Controller
     /**
      * Display the specified resource.
      */
+    /**
+     * Muestra una lista de admisión específica por su ID.
+     * @param AdmissionsList $admissionsList
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function show(AdmissionsList $admissionsList)
     {
         $data = $this->admissionsListRepositoryInterface->getById($admissionsList->id, $this->relations);
@@ -66,6 +98,9 @@ class AdmissionsListController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
+    /**
+     * Muestra el formulario para editar una lista de admisión (no implementado para API).
+     */
     public function edit(AdmissionsList $admissionsList)
     {
         //
@@ -73,6 +108,12 @@ class AdmissionsListController extends Controller
 
     /**
      * Update the specified resource in storage.
+     */
+    /**
+     * Actualiza una lista de admisión existente.
+     * @param UpdateAdmissionListRequest $request
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function update(UpdateAdmissionListRequest $request, string $id)
     {
@@ -83,6 +124,12 @@ class AdmissionsListController extends Controller
 
     /**
      * Remove the specified resource from storage.
+     */
+    /**
+     * Elimina una lista de admisión por su ID.
+     * Utiliza transacciones para asegurar la integridad de los datos.
+     * @param string $id
+     * @return \Illuminate\Http\JsonResponse
      */
     public function destroy(string $id)
     {
@@ -97,6 +144,12 @@ class AdmissionsListController extends Controller
         }
     }
 
+    /**
+     * Almacena múltiples listas de admisión en una sola operación.
+     * Utiliza transacción y maneja registros exitosos y fallidos.
+     * @param StoreAdmissionsListsRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function storeMultiple(StoreAdmissionsListsRequest $request)
     {
         $data = $request->validated();
@@ -137,6 +190,12 @@ class AdmissionsListController extends Controller
         }
     }
 
+    /**
+     * Actualiza múltiples listas de admisión en una sola operación.
+     * Utiliza transacción y maneja registros exitosos y fallidos.
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function updateMultiple(Request $request)
     {
         $data = $request->validated();
@@ -177,11 +236,21 @@ class AdmissionsListController extends Controller
         }
     }
 
+    /**
+     * Crea listas de admisión y realiza una solicitud relacionada usando el servicio.
+     * @param CreateAdmissionsListsRequest $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function createAdmissionsLists(CreateAdmissionsListsRequest $request)
     {
         return $this->admissionsListsService->storeAdmissionListAndRequest($request);
     }
 
+    /**
+     * Obtiene todas las listas de admisión para un periodo específico.
+     * @param string $period
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getByPeriod($period)
     {
         // convertir a period en string antes de usarlo
@@ -190,6 +259,10 @@ class AdmissionsListController extends Controller
         return ApiResponseClass::sendResponse(AdmissionsListResource::collection($data), '', 200);
     }
 
+    /**
+     * Obtiene todos los periodos disponibles de listas de admisión.
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAllPeriods()
     {
         $periods = $this->admissionsListRepositoryInterface->getAllPeriods();
