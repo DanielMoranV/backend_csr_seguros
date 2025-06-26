@@ -41,6 +41,7 @@ class AdmissionsListController extends Controller
     {
         $this->admissionsListRepositoryInterface = $admissionsListRepositoryInterface;
         $this->admissionsListsService = $admissionsListsService;
+        $this->middleware('compress')->only('index');
     }
     /**
      * Display a listing of the resource.

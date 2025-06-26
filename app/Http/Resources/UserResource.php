@@ -27,6 +27,8 @@ class UserResource extends JsonResource
             'role' => $this->whenLoaded('roles') && $this->roles->isNotEmpty()
                 ? new RoleResource($this->roles->first())
                 : null,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
         ];
     }
 }

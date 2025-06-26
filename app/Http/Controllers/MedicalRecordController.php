@@ -21,6 +21,7 @@ class MedicalRecordController extends Controller
     public function __construct(MedicalRecordRepositoryInterface $medicalRecordRepositoryInterface)
     {
         $this->medicalRecordRepositoryInterface = $medicalRecordRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()

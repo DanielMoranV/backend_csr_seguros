@@ -23,17 +23,16 @@ class UserRepository extends BaseRepository implements UserRepositoryInterface
     {
         $user = $this->model::findOrFail($id);
 
-        // Verifica si el usuario tiene relaciones en otras tablas
-        $hasRelations = $user->products()->exists() ||
-            $user->stockMovements()->exists() || $user->parameters()->exists();
-        if ($hasRelations) {
-            // Desactiva al usuario
-            $user->update(['is_active' => false]);
-            return ['status' => 'disabled', 'user' => $user];
-        } else {
-            // Si no tiene relaciones, elimínalo físicamente
-            $user->forceDelete();
-            return ['status' => 'deleted', 'user' => $user];
-        }
+        // Por seguridad, siempre desactivamos el usuario en lugar de eliminarlo físicamente
+        // Esto preserva la integridad de los datos y permite auditoría
+        $user->update(['is_active' => false]);
+        return ['status' => 'disabled', 'user' => $user];
+    }
+
+    public function restore($id)
+    {
+        $user = $this->model::findOrFail($id);
+        $user->update(['is_active' => true]);
+        return $user;
     }
 }

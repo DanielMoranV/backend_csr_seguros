@@ -24,6 +24,7 @@ class ShipmentController extends Controller
     {
         $this->shipmentRepositoryInterface = $shipmentRepositoryInterface;
         $this->admissionsListRepositoryInterface = $admissionsListRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()

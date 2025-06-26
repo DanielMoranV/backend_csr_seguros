@@ -24,6 +24,7 @@ class AdmissionController extends Controller
     {
         $this->admissionRepositoryInterface = $admissionRepositoryInterface;
         $this->apiSisclinService = $apiSisclinService;
+        $this->middleware('compress')->only('index');
     }
 
     public function executeQuery(Request $request)

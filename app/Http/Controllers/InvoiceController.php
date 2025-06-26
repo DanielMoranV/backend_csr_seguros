@@ -21,6 +21,7 @@ class InvoiceController extends Controller
     public function __construct(InvoiceRepositoryInterface $invoiceRepositoryInterface)
     {
         $this->invoiceRepositoryInterface = $invoiceRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()

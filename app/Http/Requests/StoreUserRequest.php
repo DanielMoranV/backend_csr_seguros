@@ -25,13 +25,12 @@ class StoreUserRequest extends FormRequest
     {
         return [
             'name' => 'required',
-            'dni' => 'required|unique:users',
+            'dni' => 'required|unique:users|size:8',
             'nick' => 'required|unique:users',
-            'email' => 'required|email',
+            'email' => 'required|email|unique:users',
             'position' => 'required',
             'phone' => 'required',
             'url_photo_profile' => 'required',
-            'password' => 'required|confirmed|min:8',
         ];
     }
     public function failedValidation(Validator $validator)

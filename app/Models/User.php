@@ -22,6 +22,7 @@ class User extends Authenticatable implements JWTSubject
     protected $fillable = [
         'name',
         'dni',
+        'nick',
         'position',
         'phone',
         'url_photo_profile',
@@ -64,15 +65,4 @@ class User extends Authenticatable implements JWTSubject
         return [];
     }
 
-    // Relación con las liquidaciones
-    public function settlements()
-    {
-        return $this->hasMany(Settlement::class);
-    }
-
-    // Relación con las solicitudes de historias clínicas
-    public function medicalRecordRequests()
-    {
-        return $this->hasMany(MedicalRecordRequest::class);
-    }
 }

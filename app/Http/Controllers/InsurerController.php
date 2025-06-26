@@ -20,6 +20,7 @@ class InsurerController extends Controller
     public function __construct(InsurerRepositoryInterface $insurerRepositoryInterface)
     {
         $this->insurerRepositoryInterface = $insurerRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()

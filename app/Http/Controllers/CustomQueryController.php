@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Log;
 
 class CustomQueryController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('compress')->only(['executeQuery', 'getAdmissionsByDateRange']);
+    }
     public function executeQuery(Request $request)
     {
         // validar si query existe y es valido

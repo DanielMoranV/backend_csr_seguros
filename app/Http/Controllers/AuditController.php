@@ -18,6 +18,7 @@ class AuditController extends Controller
     public function __construct(AuditRepositoryInterface $auditRepositoryInterface)
     {
         $this->auditRepositoryInterface = $auditRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     /**

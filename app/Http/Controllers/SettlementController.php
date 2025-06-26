@@ -19,6 +19,7 @@ class SettlementController extends Controller
     public function __construct(SettlementRepositoryInterface $settlementRepositoryInterface)
     {
         $this->settlementRepositoryInterface = $settlementRepositoryInterface;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()

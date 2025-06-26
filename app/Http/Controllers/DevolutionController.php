@@ -24,6 +24,7 @@ class DevolutionController extends Controller
     {
         $this->devolutionRepositoryInterface = $devolutionRepositoryInterface;
         $this->apiSisclinService = $apiSisclinService;
+        $this->middleware('compress')->only('index');
     }
 
     public function index()
