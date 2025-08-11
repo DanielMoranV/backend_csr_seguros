@@ -12,6 +12,8 @@ class MedicalRecordRequest extends Model
     protected $fillable = [
         'requester_nick',
         'requested_nick',
+        'derived_by',
+        'derived_at',
         'admission_number',
         'medical_record_number',
         'request_date',
@@ -26,5 +28,11 @@ class MedicalRecordRequest extends Model
     public function admissionsList()
     {
         return $this->hasMany(AdmissionsList::class);
+    }
+
+    // Relación con el usuario que deriva la solicitud
+    public function derivedByUser()
+    {
+        return $this->belongsTo(User::class, 'derived_by', 'nick');
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Requests\StoreMedicalRecordRequestRequest;
 use App\Http\Requests\StoreMedicalRecordRequestsRequest;
 use App\Http\Requests\UpdateMedicalRecordRequestRequest;
 use App\Http\Requests\UpdateMedicalRecordRequestsRequest;
+use App\Http\Requests\DeriveMedicalRecordRequest;
 use App\Models\MedicalRecordRequest;
 use Illuminate\Contracts\Cache\Store;
 use Illuminate\Support\Facades\Log;
@@ -181,6 +182,43 @@ class MedicalRecordRequestController extends Controller
             $data = $this->medicalRecordRequestRepositoryInterface->searchByMedicalRecordNumber($number);
             return ApiResponseClass::sendResponse(MedicalRecordRequestResource::collection($data), '', 200);
         } catch (\Exception $e) {
+            return ApiResponseClass::rollback($e);
+        }
+    }
+
+    public function deriveMedicalRecord(DeriveMedicalRecordRequest $request)
+    {
+        DB::beginTransaction();
+        try {
+            $data = $request->validated();
+            
+            // Obtener el usuario autenticado
+            $authUser = auth()->user();
+            
+            // Preparar datos para la derivación
+            $medicalRecordData = [
+                'requester_nick' => $authUser->nick,
+                'requested_nick' => $data['requested_nick'],
+                'derived_by' => $authUser->nick,
+                'derived_at' => now(),
+                'medical_record_number' => $data['medical_record_number'],
+                'request_date' => now(),
+                'remarks' => $data['remarks'] ?? null,
+                'status' => 'Pendiente'
+            ];
+            
+            $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($medicalRecordData);
+            DB::commit();
+
+            event(new RequestSent($medicalRecordRequest));
+            
+            return ApiResponseClass::sendResponse(
+                new MedicalRecordRequestResource($medicalRecordRequest), 
+                'Solicitud de historia clínica derivada exitosamente.', 
+                201
+            );
+        } catch (\Exception $e) {
+            DB::rollBack();
             return ApiResponseClass::rollback($e);
         }
     }

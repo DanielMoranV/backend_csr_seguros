@@ -144,6 +144,7 @@ Route::group([
     Route::patch('/update', [MedicalRecordRequestController::class, 'updateMultiple'])->name('medical-records-requests.updateMultiple');
     Route::post('/by-date-range', [MedicalRecordRequestController::class, 'getDateRange'])->name('medical-records-requests.getDateRange');
     Route::get('/by-medical-record-number/{number}', [MedicalRecordRequestController::class, 'getByMedicalRecordNumber'])->name('medical-records-requests.getByMedicalRecordNumber');
+    Route::post('/derive', [MedicalRecordRequestController::class, 'deriveMedicalRecord'])->name('medical-records-requests.derive');
 });
 Route::apiResource('medical-records-requests', MedicalRecordRequestController::class)->middleware('role:dev|admin');
 
