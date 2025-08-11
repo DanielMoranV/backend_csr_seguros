@@ -29,6 +29,7 @@ class DeriveMedicalRecordRequest extends FormRequest
                 Rule::exists('users', 'nick'),
                 'different:' . auth()->user()->nick ?? ''
             ],
+            'request_date' => 'required|date|after_or_equal:today',
             'remarks' => 'nullable|string|max:1000'
         ];
     }
@@ -43,6 +44,9 @@ class DeriveMedicalRecordRequest extends FormRequest
             'requested_nick.required' => 'El usuario solicitado es requerido.',
             'requested_nick.exists' => 'El usuario solicitado no existe.',
             'requested_nick.different' => 'No puedes derivar una solicitud para ti mismo.',
+            'request_date.required' => 'La fecha de solicitud es requerida.',
+            'request_date.date' => 'La fecha de solicitud debe ser una fecha válida.',
+            'request_date.after_or_equal' => 'La fecha de solicitud no puede ser anterior al día de hoy.',
             'remarks.max' => 'Las observaciones no pueden exceder 1000 caracteres.'
         ];
     }

@@ -62,10 +62,10 @@ class MedicalRecordRequestController extends Controller
     {
         DB::beginTransaction();
         try {
-            $data = array_filter($request->validated(), function($value) {
+            $data = array_filter($request->validated(), function ($value) {
                 return $value !== null;
             });
-            
+
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->update($data, $id);
             DB::commit();
 
@@ -191,30 +191,29 @@ class MedicalRecordRequestController extends Controller
         DB::beginTransaction();
         try {
             $data = $request->validated();
-            
+
             // Obtener el usuario autenticado
             $authUser = auth()->user();
-            
+
             // Preparar datos para la derivación
             $medicalRecordData = [
-                'requester_nick' => $authUser->nick,
-                'requested_nick' => $data['requested_nick'],
+                'requester_nick' => $data['requested_nick'],
                 'derived_by' => $authUser->nick,
                 'derived_at' => now(),
                 'medical_record_number' => $data['medical_record_number'],
-                'request_date' => now(),
+                'request_date' => $data['request_date'],
                 'remarks' => $data['remarks'] ?? null,
                 'status' => 'Pendiente'
             ];
-            
+
             $medicalRecordRequest = $this->medicalRecordRequestRepositoryInterface->store($medicalRecordData);
             DB::commit();
 
             event(new RequestSent($medicalRecordRequest));
-            
+
             return ApiResponseClass::sendResponse(
-                new MedicalRecordRequestResource($medicalRecordRequest), 
-                'Solicitud de historia clínica derivada exitosamente.', 
+                new MedicalRecordRequestResource($medicalRecordRequest),
+                'Solicitud de historia clínica derivada exitosamente.',
                 201
             );
         } catch (\Exception $e) {
