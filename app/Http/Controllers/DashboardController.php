@@ -34,12 +34,14 @@ class DashboardController extends Controller
         try {
             $startDate = $request->validated('start_date');
             $endDate = $request->validated('end_date');
+            // Optimización: Permitir excluir admissions del response para transferir menos datos
+            $includeAdmissions = $request->input('include_admissions', true);
 
-            // Cachear por 10 minutos
-            $cacheKey = "dashboard:date_range:{$startDate}:{$endDate}";
+            // Cachear por 10 minutos (clave diferente si no incluye admissions)
+            $cacheKey = "dashboard:date_range:{$startDate}:{$endDate}:" . ($includeAdmissions ? '1' : '0');
 
-            $data = Cache::remember($cacheKey, 600, function () use ($startDate, $endDate) {
-                return $this->dashboardService->getDateRangeAnalysis($startDate, $endDate);
+            $data = Cache::remember($cacheKey, 600, function () use ($startDate, $endDate, $includeAdmissions) {
+                return $this->dashboardService->getDateRangeAnalysis($startDate, $endDate, $includeAdmissions);
             });
 
             return ApiResponseClass::sendResponse($data, 'Análisis por rango de fechas obtenido exitosamente');

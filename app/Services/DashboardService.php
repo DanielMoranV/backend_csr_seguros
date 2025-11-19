@@ -14,8 +14,12 @@ class DashboardService
 
     /**
      * An�lisis por rango de fechas
+     *
+     * @param string $startDate Fecha de inicio (Y-m-d)
+     * @param string $endDate Fecha de fin (Y-m-d)
+     * @param bool $includeAdmissions Si incluir array completo de admisiones (default: true)
      */
-    public function getDateRangeAnalysis(string $startDate, string $endDate): array
+    public function getDateRangeAnalysis(string $startDate, string $endDate, bool $includeAdmissions = true): array
     {
         // 1. Obtener admisiones deduplicadas de la base de datos legada
         $admissions = $this->admissionRepository->getUniqueAdmissionsByDateRange(
@@ -34,7 +38,7 @@ class DashboardService
         $uniquePatients = $this->aggregationService->calculateUniquePatients($admissions);
         $topCompanies = $this->aggregationService->calculateTopCompanies($admissions);
 
-        return [
+        $result = [
             'summary' => [
                 'total_admissions' => count($admissions),
                 'period' => [
@@ -48,8 +52,14 @@ class DashboardService
             'attendance_type_analysis' => $attendanceTypeAnalysis,
             'unique_patients' => $uniquePatients,
             'top_companies' => $topCompanies,
-            'admissions' => $admissions,
         ];
+
+        // Optimización: Solo incluir admissions si se requiere (ahorro de transferencia)
+        if ($includeAdmissions) {
+            $result['admissions'] = $admissions;
+        }
+
+        return $result;
     }
 
     /**

@@ -14,39 +14,54 @@ class AggregationService
 
     /**
      * Calcular estado de facturaci�n por mes
+     * Optimizado: Una sola iteración en lugar de múltiples groupBy
      */
     public function calculateInvoiceStatusByMonth(array $admissions): array
     {
-        $collection = collect($admissions);
+        // Optimización: Calcular cantidad y monto en una sola iteración
+        $byMonth = [];
 
-        // Por cantidad
-        $byQuantity = $collection->groupBy('month')->map(function ($items, $month) {
-            return [
-                'invoiced' => $items->where('status', '!=', 'Pendiente')->count(),
-                'pending' => $items->where('status', 'Pendiente')->count(),
-            ];
-        });
+        foreach ($admissions as $admission) {
+            $month = $admission['month'] ?? 0;
+            if (!isset($byMonth[$month])) {
+                $byMonth[$month] = [
+                    'invoiced_count' => 0,
+                    'pending_count' => 0,
+                    'invoiced_amount' => 0,
+                    'pending_amount' => 0,
+                ];
+            }
 
-        // Por monto
-        $byAmount = $collection->groupBy('month')->map(function ($items, $month) {
-            return [
-                'invoiced' => $items->where('status', '!=', 'Pendiente')->sum('amount'),
-                'pending' => $items->where('status', 'Pendiente')->sum('amount'),
-            ];
-        });
+            $isPending = ($admission['status'] ?? '') === 'Pendiente';
+            $amount = $admission['amount'] ?? 0;
 
-        $months = $collection->pluck('month')->unique()->sort()->map(fn($m) => $this->monthsEs[$m])->values();
+            if ($isPending) {
+                $byMonth[$month]['pending_count']++;
+                $byMonth[$month]['pending_amount'] += $amount;
+            } else {
+                $byMonth[$month]['invoiced_count']++;
+                $byMonth[$month]['invoiced_amount'] += $amount;
+            }
+        }
+
+        ksort($byMonth);
+
+        $months = array_map(fn($m) => $this->monthsEs[$m] ?? $m, array_keys($byMonth));
+        $invoicedCounts = array_column($byMonth, 'invoiced_count');
+        $pendingCounts = array_column($byMonth, 'pending_count');
+        $invoicedAmounts = array_column($byMonth, 'invoiced_amount');
+        $pendingAmounts = array_column($byMonth, 'pending_amount');
 
         return [
             'view_by_quantity' => [
-                'months' => $months->toArray(),
-                'invoiced' => $byQuantity->pluck('invoiced')->values()->toArray(),
-                'pending' => $byQuantity->pluck('pending')->values()->toArray(),
+                'months' => $months,
+                'invoiced' => $invoicedCounts,
+                'pending' => $pendingCounts,
             ],
             'view_by_amount' => [
-                'months' => $months->toArray(),
-                'invoiced' => $byAmount->pluck('invoiced')->values()->toArray(),
-                'pending' => $byAmount->pluck('pending')->values()->toArray(),
+                'months' => $months,
+                'invoiced' => $invoicedAmounts,
+                'pending' => $pendingAmounts,
             ],
         ];
     }
@@ -185,46 +200,63 @@ class AggregationService
 
     /**
      * Calcular top 10 empresas
+     * Optimizado: Una sola iteración en lugar de dos groupBy
      */
     public function calculateTopCompanies(array $admissions, int $limit = 10): array
     {
-        $collection = collect($admissions)->filter(fn($item) => !empty($item['company']));
-        $totalAdmissions = $collection->count();
-        $totalAmount = $collection->sum('amount');
+        // Optimización: Calcular todo en una sola iteración
+        $companies = [];
+        $totalAdmissions = 0;
+        $totalAmount = 0;
 
-        // Top por cantidad
-        $byQuantity = $collection
-            ->groupBy('company')
-            ->map(function ($items, $company) use ($totalAdmissions) {
-                $count = $items->count();
-                return [
-                    'company' => $company,
-                    'count' => $count,
-                    'percentage' => $totalAdmissions > 0 ? round(($count * 100) / $totalAdmissions, 2) : 0,
-                ];
-            })
-            ->sortByDesc('count')
-            ->take($limit)
-            ->values();
+        foreach ($admissions as $admission) {
+            if (empty($admission['company'])) {
+                continue;
+            }
 
-        // Top por monto
-        $byAmount = $collection
-            ->groupBy('company')
-            ->map(function ($items, $company) use ($totalAmount) {
-                $amount = $items->sum('amount');
-                return [
-                    'company' => $company,
-                    'amount' => round($amount, 2),
-                    'percentage' => $totalAmount > 0 ? round(($amount * 100) / $totalAmount, 2) : 0,
-                ];
-            })
-            ->sortByDesc('amount')
-            ->take($limit)
-            ->values();
+            $company = $admission['company'];
+            $amount = $admission['amount'] ?? 0;
+
+            if (!isset($companies[$company])) {
+                $companies[$company] = ['count' => 0, 'amount' => 0];
+            }
+
+            $companies[$company]['count']++;
+            $companies[$company]['amount'] += $amount;
+            $totalAdmissions++;
+            $totalAmount += $amount;
+        }
+
+        // Ordenar por cantidad y tomar top
+        uasort($companies, fn($a, $b) => $b['count'] <=> $a['count']);
+        $topByQuantity = array_slice($companies, 0, $limit, true);
+
+        // Ordenar por monto y tomar top
+        uasort($companies, fn($a, $b) => $b['amount'] <=> $a['amount']);
+        $topByAmount = array_slice($companies, 0, $limit, true);
+
+        // Formatear resultados
+        $byQuantity = [];
+        foreach ($topByQuantity as $company => $data) {
+            $byQuantity[] = [
+                'company' => $company,
+                'count' => $data['count'],
+                'percentage' => $totalAdmissions > 0 ? round(($data['count'] * 100) / $totalAdmissions, 2) : 0,
+            ];
+        }
+
+        $byAmount = [];
+        foreach ($topByAmount as $company => $data) {
+            $byAmount[] = [
+                'company' => $company,
+                'amount' => round($data['amount'], 2),
+                'percentage' => $totalAmount > 0 ? round(($data['amount'] * 100) / $totalAmount, 2) : 0,
+            ];
+        }
 
         return [
-            'view_by_quantity' => $byQuantity->toArray(),
-            'view_by_amount' => $byAmount->toArray(),
+            'view_by_quantity' => $byQuantity,
+            'view_by_amount' => $byAmount,
         ];
     }
 

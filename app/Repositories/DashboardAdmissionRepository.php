@@ -25,6 +25,7 @@ class DashboardAdmissionRepository
         $allAdmissions = $baseQuery->get();
 
         // Agrupamos por número de admisión y seleccionamos la mejor factura en PHP
+        // Optimización: Evitar json_decode(json_encode()) - convertir directamente a array
         $uniqueAdmissions = collect($allAdmissions)
             ->groupBy('number')
             ->map(function ($admissionsGroup) {
@@ -37,9 +38,10 @@ class DashboardAdmissionRepository
                     ->first();
             })
             ->values()
+            ->map(fn($item) => (array) $item) // Conversión directa a array
             ->all();
 
-        return json_decode(json_encode($uniqueAdmissions), true);
+        return $uniqueAdmissions;
     }
 
     /**
@@ -55,7 +57,7 @@ class DashboardAdmissionRepository
             ->whereIn('SC0011.num_doc', $numbers)
             ->orderByDesc('SC0011.num_doc');
 
-        return json_decode(json_encode($baseQuery->get()), true);
+        return $baseQuery->get()->map(fn($item) => (array) $item)->all();
     }
 
     /**
@@ -122,31 +124,39 @@ class DashboardAdmissionRepository
      */
     public function enrichWithShipments(array $admissions): array
     {
-        $invoiceNumbers = collect($admissions)
-            ->pluck('invoice_number')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
+        if (empty($admissions)) {
+            return $admissions;
+        }
+
+        // Optimización: Usar array_column en lugar de Collection
+        $invoiceNumbers = array_values(array_unique(array_filter(array_column($admissions, 'invoice_number'))));
 
         if (empty($invoiceNumbers)) {
             return $admissions;
         }
 
         // Consultar tabla shipments en la base de datos de aplicación
+        // Optimización: Seleccionar solo campos necesarios
         $shipments = DB::table('shipments')
+            ->select('invoice_number', 'verified_shipment_date')
             ->whereIn('invoice_number', $invoiceNumbers)
             ->whereNotNull('verified_shipment_date')
             ->get()
             ->keyBy('invoice_number');
 
+        // Optimización: Convertir a array nativo para acceso más rápido
+        $shipmentsArray = [];
+        foreach ($shipments as $key => $shipment) {
+            $shipmentsArray[$key] = $shipment->verified_shipment_date;
+        }
+
         foreach ($admissions as &$admission) {
-            if (isset($admission['invoice_number']) && isset($shipments[$admission['invoice_number']])) {
+            if (isset($admission['invoice_number']) && isset($shipmentsArray[$admission['invoice_number']])) {
                 // Si tiene envío verificado y aún no está clasificado como Pagado/Devolución
                 if ($admission['status'] === 'Liquidado') {
                     $admission['status'] = 'Enviado';
                 }
-                $admission['verified_shipment_date'] = $shipments[$admission['invoice_number']]->verified_shipment_date;
+                $admission['verified_shipment_date'] = $shipmentsArray[$admission['invoice_number']];
             }
         }
 
@@ -159,11 +169,12 @@ class DashboardAdmissionRepository
      */
     public function enrichWithAudits(array $admissions): array
     {
-        $admissionNumbers = collect($admissions)
-            ->pluck('number')
-            ->unique()
-            ->values()
-            ->toArray();
+        if (empty($admissions)) {
+            return $admissions;
+        }
+
+        // Optimización: Usar array_column en lugar de Collection
+        $admissionNumbers = array_values(array_unique(array_column($admissions, 'number')));
 
         if (empty($admissionNumbers)) {
             return $admissions;
@@ -175,10 +186,14 @@ class DashboardAdmissionRepository
             ->get()
             ->keyBy('admission_number');
 
+        // Optimización: Evitar json_decode(json_encode()), convertir directamente
+        $auditsArray = [];
+        foreach ($audits as $key => $audit) {
+            $auditsArray[$key] = (array) $audit;
+        }
+
         foreach ($admissions as &$admission) {
-            $admission['audit'] = isset($audits[$admission['number']])
-                ? json_decode(json_encode($audits[$admission['number']]), true)
-                : null;
+            $admission['audit'] = $auditsArray[$admission['number']] ?? null;
         }
 
         return $admissions;
@@ -190,11 +205,12 @@ class DashboardAdmissionRepository
      */
     public function enrichWithAdmissionsLists(array $admissions, string $period): array
     {
-        $admissionNumbers = collect($admissions)
-            ->pluck('number')
-            ->unique()
-            ->values()
-            ->toArray();
+        if (empty($admissions)) {
+            return $admissions;
+        }
+
+        // Optimización: Usar array_column en lugar de Collection
+        $admissionNumbers = array_values(array_unique(array_column($admissions, 'number')));
 
         if (empty($admissionNumbers)) {
             return $admissions;
@@ -207,9 +223,15 @@ class DashboardAdmissionRepository
             ->get()
             ->keyBy('admission_number');
 
+        // Optimización: Evitar json_decode(json_encode()), convertir directamente
+        $listsArray = [];
+        foreach ($admissionsLists as $key => $list) {
+            $listsArray[$key] = (array) $list;
+        }
+
         foreach ($admissions as &$admission) {
-            if (isset($admissionsLists[$admission['number']])) {
-                $listData = json_decode(json_encode($admissionsLists[$admission['number']]), true);
+            if (isset($listsArray[$admission['number']])) {
+                $listData = $listsArray[$admission['number']];
                 $admission['admissions_list'] = $listData;
                 // Sobrescribir biller si existe en admissions_lists
                 if (!empty($listData['biller'])) {
