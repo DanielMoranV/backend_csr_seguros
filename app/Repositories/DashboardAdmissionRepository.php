@@ -72,7 +72,7 @@ class DashboardAdmissionRepository
                 LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
                 LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
                 LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
-                WHERE SC0011.fec_doc BETWEEN ? AND ?
+                WHERE SC0011.fec_doc BETWEEN :start_date AND :end_date
                     AND SC0011.tot_doc >= 0
                     AND SC0011.nom_pac != ''
                     AND SC0011.nom_pac != 'No existe...'
@@ -82,7 +82,7 @@ class DashboardAdmissionRepository
         ";
 
         $results = DB::connection('external_db')
-            ->select($sql, [$startDate, $endDate]);
+            ->select($sql, ['start_date' => $startDate, 'end_date' => $endDate]);
 
         // Convertir stdClass a array
         return array_map(fn($item) => (array) $item, $results);
@@ -120,7 +120,7 @@ class DashboardAdmissionRepository
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
             LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
-            WHERE SC0011.fec_doc BETWEEN ? AND ?
+            WHERE SC0011.fec_doc BETWEEN :start_date AND :end_date
                 AND SC0011.tot_doc >= 0
                 AND SC0011.nom_pac != ''
                 AND SC0011.nom_pac != 'No existe...'
@@ -128,7 +128,7 @@ class DashboardAdmissionRepository
         ";
 
         $results = DB::connection('external_db')
-            ->select($sql, [$startDate, $endDate]);
+            ->select($sql, ['start_date' => $startDate, 'end_date' => $endDate]);
 
         return array_map(fn($item) => (array) $item, $results);
     }
