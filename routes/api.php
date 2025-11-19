@@ -14,6 +14,7 @@ use App\Http\Controllers\AuditController;
 use App\Http\Controllers\CustomQueryController;
 use App\Http\Controllers\MedicalRecordRequestController;
 use App\Http\Controllers\ShipmentController;
+use App\Http\Controllers\DashboardController;
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
@@ -166,3 +167,13 @@ Route::apiResource('shipments', ShipmentController::class)->middleware('role:dev
 
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
 Route::post('admissions_by_date_range', [CustomQueryController::class, 'getAdmissionsByDateRange'])->name('getAdmissionsByDateRange');
+
+// Dashboard Routes - Reportes y Estadísticas
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'dashboard'
+], function () {
+    Route::post('/date-range-analysis', [DashboardController::class, 'dateRangeAnalysis'])->name('dashboard.dateRangeAnalysis');
+    Route::post('/period-analysis', [DashboardController::class, 'periodAnalysis'])->name('dashboard.periodAnalysis');
+    Route::post('/clear-cache', [DashboardController::class, 'clearCache'])->name('dashboard.clearCache');
+});
