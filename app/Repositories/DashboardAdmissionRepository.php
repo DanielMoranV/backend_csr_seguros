@@ -69,7 +69,8 @@ class DashboardAdmissionRepository
                 SELECT
                     num_doc,
                     MAX(CASE
-                        WHEN num_fac NOT LIKE '005-%' AND num_fac NOT LIKE '006-%'
+                        WHEN num_fac NOT LIKE '005-%' AND num_fac NOT LIKE '006-%' AND num_fac NOT LIKE '009-%'
+                            AND (num_fac LIKE '004-%' OR num_fac LIKE '003-%')
                         THEN CONCAT(fec_fac, '|', num_fac)
                         ELSE CONCAT(fec_fac, '|Z|', num_fac)
                     END) as max_invoice_key
@@ -78,11 +79,12 @@ class DashboardAdmissionRepository
             ) AS latest ON SC0011.num_doc = latest.num_doc
             LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
                 AND CONCAT(SC0017.fec_fac, '|', CASE
-                    WHEN SC0017.num_fac NOT LIKE '005-%' AND SC0017.num_fac NOT LIKE '006-%'
+                    WHEN SC0017.num_fac NOT LIKE '005-%' AND SC0017.num_fac NOT LIKE '006-%' AND SC0017.num_fac NOT LIKE '009-%'
+                        AND (SC0017.num_fac LIKE '004-%' OR SC0017.num_fac LIKE '003-%')
                     THEN SC0017.num_fac
                     ELSE CONCAT('Z|', SC0017.num_fac)
                 END) = latest.max_invoice_key
-            LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+            LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
             WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
                 AND SC0011.tot_doc >= 0
                 AND SC0011.nom_pac != ''
@@ -131,7 +133,7 @@ class DashboardAdmissionRepository
             LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
-            LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+            LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
             WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
                 AND SC0011.tot_doc >= 0
                 AND SC0011.nom_pac != ''
@@ -169,7 +171,7 @@ class DashboardAdmissionRepository
         return DB::connection('external_db')
             ->table('SC0011')
             ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->leftJoin('SC0022', 'SC0017.num_fac', '=', 'SC0022.num_fac')
+            ->leftJoin('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
             ->leftJoin('SC0033', 'SC0011.num_doc', '=', 'SC0033.num_doc')
             ->leftJoin('SC0006', 'SC0011.cod_ser', '=', 'SC0006.cod_ser')
             ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')

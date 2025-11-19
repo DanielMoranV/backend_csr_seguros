@@ -85,8 +85,10 @@ class DashboardAggregationRepository
             ->get();
 
         // 3. Estado de pagos (todas las admisiones)
-        // OPTIMIZACIÓN: Usa subquery para obtener el mejor estado por admisión
-        // Evita contar duplicados cuando una admisión tiene múltiples facturas
+        // SC0017: facturas emitidas (formato num_fac: "004-0001234", "003-0001234")
+        // SC0022: pagos realizados (formato num_fac: "F004-0001234", diferente a SC0017)
+        // Campo común: num_doc (SC0011.num_doc = SC0017.num_doc = SC0022.num_doc)
+        // Lógica: Si SC0011.num_doc existe en SC0022, la factura está pagada
         $paymentStatus = DB::connection('external_db')
             ->table('SC0011')
             ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
@@ -95,9 +97,11 @@ class DashboardAggregationRepository
                     SELECT
                         SC0017.num_doc,
                         MAX(CASE
-                            WHEN SC0022.num_fac IS NOT NULL
+                            WHEN SC0022.num_doc IS NOT NULL
                                 AND SC0017.num_fac NOT LIKE "005-%"
                                 AND SC0017.num_fac NOT LIKE "006-%"
+                                AND SC0017.num_fac NOT LIKE "009-%"
+                                AND (SC0017.num_fac LIKE "004-%" OR SC0017.num_fac LIKE "003-%")
                             THEN 1
                             ELSE 0
                         END) as is_paid,
@@ -105,11 +109,13 @@ class DashboardAggregationRepository
                             WHEN SC0017.num_fac IS NOT NULL
                                 AND SC0017.num_fac NOT LIKE "005-%"
                                 AND SC0017.num_fac NOT LIKE "006-%"
+                                AND SC0017.num_fac NOT LIKE "009-%"
+                                AND (SC0017.num_fac LIKE "004-%" OR SC0017.num_fac LIKE "003-%")
                             THEN 1
                             ELSE 0
-                        END) as is_invoiced
+                        END) as has_valid_invoice
                     FROM SC0017
-                    LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+                    LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
                     GROUP BY SC0017.num_doc
                 ) as invoice_status'),
                 'SC0011.num_doc',
@@ -120,9 +126,9 @@ class DashboardAggregationRepository
             ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
             ->selectRaw('
                 SUM(CASE WHEN invoice_status.is_paid = 1 THEN 1 ELSE 0 END) as paid_count,
-                SUM(CASE WHEN COALESCE(invoice_status.is_paid, 0) = 0 THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN COALESCE(invoice_status.has_valid_invoice, 0) = 1 AND COALESCE(invoice_status.is_paid, 0) = 0 THEN 1 ELSE 0 END) as pending_count,
                 SUM(CASE WHEN invoice_status.is_paid = 1 THEN SC0011.tot_doc ELSE 0 END) as paid_amount,
-                SUM(CASE WHEN COALESCE(invoice_status.is_paid, 0) = 0 THEN SC0011.tot_doc ELSE 0 END) as pending_amount
+                SUM(CASE WHEN COALESCE(invoice_status.has_valid_invoice, 0) = 1 AND COALESCE(invoice_status.is_paid, 0) = 0 THEN SC0011.tot_doc ELSE 0 END) as pending_amount
             ')
             ->first();
 
