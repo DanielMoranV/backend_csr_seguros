@@ -169,7 +169,7 @@ class DashboardAdmissionRepository
         return DB::connection('external_db')
             ->table('SC0011')
             ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->leftJoin('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
+            ->leftJoin('SC0022', 'SC0017.num_fac', '=', 'SC0022.num_fac')
             ->leftJoin('SC0033', 'SC0011.num_doc', '=', 'SC0033.num_doc')
             ->leftJoin('SC0006', 'SC0011.cod_ser', '=', 'SC0006.cod_ser')
             ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
