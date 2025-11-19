@@ -9,39 +9,128 @@ class DashboardAdmissionRepository
 {
     /**
      * Obtener admisiones deduplicadas con factura más reciente
-     * Utiliza ROW_NUMBER() para seleccionar la factura más reciente por admisión
+     * OPTIMIZADO: Usa Window Functions de MySQL 8.1 para deduplicar en base de datos
      */
     public function getUniqueAdmissionsByDateRange(string $startDate, string $endDate): array
     {
-        // Construir el query base con todas las relaciones necesarias
-        $baseQuery = $this->buildBaseQuery()
-            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
-            ->where('SC0011.tot_doc', '>=', 0)
-            ->where('SC0011.nom_pac', '!=', '')
-            ->where('SC0011.nom_pac', '!=', 'No existe...')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES']);
+        // OPTIMIZACIÓN: Deduplicación con ROW_NUMBER() en MySQL 8.1
+        // Esto evita traer datos duplicados a PHP y procesarlos allí
+        $sql = "
+            SELECT *
+            FROM (
+                SELECT
+                    SC0011.num_doc as number,
+                    SC0011.fec_doc as attendance_date,
+                    SC0011.nom_pac as patient,
+                    SC0011.hi_doc as attendance_hour,
+                    SC0011.ta_doc as type,
+                    SC0011.tot_doc as amount,
+                    SC0011.cod_pac as patient_code,
+                    SC0011.clos_doc as is_closed,
+                    SC0003.nom_emp as company,
+                    SC0006.nom_ser as doctor,
+                    SC0004.nh_pac as medical_record_number,
+                    SC0017.num_fac as invoice_number,
+                    SC0017.fec_fac as invoice_date,
+                    SC0017.uc_sis as biller,
+                    SC0033.fh_dev as devolution_date,
+                    SC0033.num_fac as devolution_invoice_number,
+                    SC0002.nom_cia as insurer_name,
+                    SC0022.num_fac as paid_invoice_number,
+                    MONTH(SC0011.fec_doc) as month,
+                    DATEDIFF(CURDATE(), SC0011.fec_doc) as days_passed,
+                    CASE
+                        WHEN SC0017.num_fac IS NULL
+                            OR SC0017.num_fac LIKE '005-%'
+                            OR SC0017.num_fac LIKE '006-%'
+                        THEN 'Pendiente'
 
-        // Traemos todas las admisiones (potencialmente con duplicados por factura)
-        $allAdmissions = $baseQuery->get();
+                        WHEN SC0033.fh_dev IS NOT NULL
+                            AND SC0022.num_fac IS NULL
+                        THEN 'Devolución'
 
-        // Agrupamos por número de admisión y seleccionamos la mejor factura en PHP
-        // Optimización: Evitar json_decode(json_encode()) - convertir directamente a array
-        $uniqueAdmissions = collect($allAdmissions)
-            ->groupBy('number')
-            ->map(function ($admissionsGroup) {
-                return $admissionsGroup->sortByDesc('invoice_date')
-                    ->sortBy(function ($admission) {
-                        // El invoice_number puede ser null, hay que manejarlo
-                        $invoice_number = $admission->invoice_number ?? '';
-                        return (str_starts_with($invoice_number, '005-') || str_starts_with($invoice_number, '006-')) ? 1 : 0;
-                    })
-                    ->first();
-            })
-            ->values()
-            ->map(fn($item) => (array) $item) // Conversión directa a array
-            ->all();
+                        WHEN SC0022.num_fac IS NOT NULL
+                        THEN 'Pagado'
 
-        return $uniqueAdmissions;
+                        ELSE 'Liquidado'
+                    END as status,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY SC0011.num_doc
+                        ORDER BY
+                            SC0017.fec_fac DESC,
+                            CASE
+                                WHEN SC0017.num_fac LIKE '005-%' OR SC0017.num_fac LIKE '006-%'
+                                THEN 1
+                                ELSE 0
+                            END ASC
+                    ) as row_num
+                FROM SC0011
+                LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
+                LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+                LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
+                LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
+                LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
+                LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
+                LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
+                WHERE SC0011.fec_doc BETWEEN ? AND ?
+                    AND SC0011.tot_doc >= 0
+                    AND SC0011.nom_pac != ''
+                    AND SC0011.nom_pac != 'No existe...'
+                    AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
+            ) as deduplicated
+            WHERE row_num = 1
+        ";
+
+        $results = DB::connection('external_db')
+            ->select($sql, [$startDate, $endDate]);
+
+        // Convertir stdClass a array
+        return array_map(fn($item) => (array) $item, $results);
+    }
+
+    /**
+     * Obtener admisiones SOLO para agregaciones (sin enriquecimiento)
+     * OPTIMIZADO: Query mínimo solo con campos necesarios para cálculos
+     */
+    public function getAdmissionsForAggregation(string $startDate, string $endDate): array
+    {
+        // Query ultra optimizado: solo campos para agregaciones
+        $sql = "
+            SELECT
+                SC0011.num_doc as number,
+                MONTH(SC0011.fec_doc) as month,
+                SC0011.ta_doc as type,
+                SC0011.tot_doc as amount,
+                SC0011.cod_pac as patient_code,
+                SC0003.nom_emp as company,
+                SC0002.nom_cia as insurer_name,
+                SC0017.num_fac as invoice_number,
+                SC0022.num_fac as paid_invoice_number,
+                CASE
+                    WHEN SC0017.num_fac IS NULL
+                        OR SC0017.num_fac LIKE '005-%'
+                        OR SC0017.num_fac LIKE '006-%'
+                    THEN 'Pendiente'
+                    WHEN SC0022.num_fac IS NOT NULL
+                    THEN 'Pagado'
+                    ELSE 'Liquidado'
+                END as status
+            FROM SC0011
+            LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
+            LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
+            LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
+            LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+            WHERE SC0011.fec_doc BETWEEN ? AND ?
+                AND SC0011.tot_doc >= 0
+                AND SC0011.nom_pac != ''
+                AND SC0011.nom_pac != 'No existe...'
+                AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
+        ";
+
+        $results = DB::connection('external_db')
+            ->select($sql, [$startDate, $endDate]);
+
+        return array_map(fn($item) => (array) $item, $results);
     }
 
     /**

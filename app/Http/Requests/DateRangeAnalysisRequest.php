@@ -26,6 +26,8 @@ class DateRangeAnalysisRequest extends FormRequest
                 'after_or_equal:start_date',
                 'before_or_equal:today'
             ],
+            'include_admissions' => 'sometimes|boolean',
+            'aggregations_only' => 'sometimes|boolean',
         ];
     }
 
