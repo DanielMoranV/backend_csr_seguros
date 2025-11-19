@@ -95,7 +95,7 @@ class DashboardAggregationRepository
                     SELECT
                         SC0017.num_doc,
                         MAX(CASE
-                            WHEN SC0022.num_doc IS NOT NULL
+                            WHEN SC0022.num_fac IS NOT NULL
                                 AND SC0017.num_fac NOT LIKE "005-%"
                                 AND SC0017.num_fac NOT LIKE "006-%"
                             THEN 1
@@ -109,7 +109,7 @@ class DashboardAggregationRepository
                             ELSE 0
                         END) as is_invoiced
                     FROM SC0017
-                    LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
+                    LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
                     GROUP BY SC0017.num_doc
                 ) as invoice_status'),
                 'SC0011.num_doc',
