@@ -241,6 +241,9 @@ class DashboardService
             $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
         }
 
+        // OPTIMIZACIÓN: Calcular agregaciones directamente en MySQL
+        $aggregations = $this->aggregationRepository->getDateRangeAggregations($startDate, $endDate);
+
         // 1. Obtener admisiones
         $admissions = $this->admissionRepository->getUniqueAdmissionsByDateRange(
             $startDate,
@@ -263,10 +266,22 @@ class DashboardService
 
         return [
             'summary' => [
-                'total_admissions' => count($admissions),
-                'period' => $period,
-                'period_label' => $this->getPeriodLabel($period),
+                'total_admissions' => $aggregations['total_admissions'],
+                'period' => [
+                    'start' => $startDate,
+                    'end' => $endDate,
+                ],
             ],
+            'invoice_status_by_month' => $this->formatInvoiceStatusByMonth($aggregations['invoice_by_month']),
+            'insurers_by_month' => $this->formatInsurersByMonth($aggregations['insurers_by_month']),
+            'payment_status' => $this->formatPaymentStatus($aggregations['payment_status'], $aggregations['total_admissions']),
+            'attendance_type_analysis' => $this->formatAttendanceTypeAnalysis($aggregations['attendance_type'], $aggregations['total_admissions']),
+            'unique_patients' => $this->formatUniquePatients($aggregations['unique_patients'], $aggregations['total_admissions']),
+            'top_companies' => $this->formatTopCompanies(
+                $aggregations['top_companies_by_count'],
+                $aggregations['top_companies_by_amount'],
+                $aggregations['total_admissions']
+            ),
             'auditors_performance' => $auditorsPerformance,
             'billers_performance' => $billersPerformance,
             'admissions' => $admissions,
