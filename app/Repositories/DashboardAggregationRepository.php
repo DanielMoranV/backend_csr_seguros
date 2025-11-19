@@ -95,21 +95,33 @@ class DashboardAggregationRepository
             ->selectRaw('
                 SUM(CASE
                     WHEN SC0022.num_fac IS NOT NULL
+                        AND SC0017.num_fac IS NOT NULL
+                        AND SC0017.num_fac NOT LIKE "005-%"
+                        AND SC0017.num_fac NOT LIKE "006-%"
                     THEN 1
                     ELSE 0
                 END) as paid_count,
                 SUM(CASE
                     WHEN SC0022.num_fac IS NULL
+                        OR SC0017.num_fac IS NULL
+                        OR SC0017.num_fac LIKE "005-%"
+                        OR SC0017.num_fac LIKE "006-%"
                     THEN 1
                     ELSE 0
                 END) as pending_count,
                 SUM(CASE
                     WHEN SC0022.num_fac IS NOT NULL
+                        AND SC0017.num_fac IS NOT NULL
+                        AND SC0017.num_fac NOT LIKE "005-%"
+                        AND SC0017.num_fac NOT LIKE "006-%"
                     THEN SC0011.tot_doc
                     ELSE 0
                 END) as paid_amount,
                 SUM(CASE
                     WHEN SC0022.num_fac IS NULL
+                        OR SC0017.num_fac IS NULL
+                        OR SC0017.num_fac LIKE "005-%"
+                        OR SC0017.num_fac LIKE "006-%"
                     THEN SC0011.tot_doc
                     ELSE 0
                 END) as pending_amount
