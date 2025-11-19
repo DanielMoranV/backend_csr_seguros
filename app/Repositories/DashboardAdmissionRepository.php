@@ -15,6 +15,11 @@ class DashboardAdmissionRepository
     {
         // OPTIMIZACIÓN: Deduplicación con ROW_NUMBER() en MySQL 8.1
         // Esto evita traer datos duplicados a PHP y procesarlos allí
+
+        // Escapar valores para evitar SQL injection
+        $startDateQuoted = DB::connection('external_db')->getPdo()->quote($startDate);
+        $endDateQuoted = DB::connection('external_db')->getPdo()->quote($endDate);
+
         $sql = "
             SELECT *
             FROM (
@@ -72,7 +77,7 @@ class DashboardAdmissionRepository
                 LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
                 LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
                 LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
-                WHERE SC0011.fec_doc BETWEEN :start_date AND :end_date
+                WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
                     AND SC0011.tot_doc >= 0
                     AND SC0011.nom_pac != ''
                     AND SC0011.nom_pac != 'No existe...'
@@ -81,8 +86,7 @@ class DashboardAdmissionRepository
             WHERE row_num = 1
         ";
 
-        $results = DB::connection('external_db')
-            ->select($sql, ['start_date' => $startDate, 'end_date' => $endDate]);
+        $results = DB::connection('external_db')->select($sql);
 
         // Convertir stdClass a array
         return array_map(fn($item) => (array) $item, $results);
@@ -94,6 +98,10 @@ class DashboardAdmissionRepository
      */
     public function getAdmissionsForAggregation(string $startDate, string $endDate): array
     {
+        // Escapar valores para evitar SQL injection
+        $startDateQuoted = DB::connection('external_db')->getPdo()->quote($startDate);
+        $endDateQuoted = DB::connection('external_db')->getPdo()->quote($endDate);
+
         // Query ultra optimizado: solo campos para agregaciones
         $sql = "
             SELECT
@@ -120,15 +128,14 @@ class DashboardAdmissionRepository
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
             LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
-            WHERE SC0011.fec_doc BETWEEN :start_date AND :end_date
+            WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
                 AND SC0011.tot_doc >= 0
                 AND SC0011.nom_pac != ''
                 AND SC0011.nom_pac != 'No existe...'
                 AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
         ";
 
-        $results = DB::connection('external_db')
-            ->select($sql, ['start_date' => $startDate, 'end_date' => $endDate]);
+        $results = DB::connection('external_db')->select($sql);
 
         return array_map(fn($item) => (array) $item, $results);
     }
