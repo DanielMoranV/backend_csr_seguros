@@ -85,46 +85,44 @@ class DashboardAggregationRepository
             ->get();
 
         // 3. Estado de pagos (todas las admisiones)
+        // OPTIMIZACIÓN: Usa subquery para obtener el mejor estado por admisión
+        // Evita contar duplicados cuando una admisión tiene múltiples facturas
         $paymentStatus = DB::connection('external_db')
             ->table('SC0011')
-            ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->leftJoin('SC0022', 'SC0017.num_fac', '=', 'SC0022.num_fac')
             ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->leftJoin(
+                DB::raw('(
+                    SELECT
+                        SC0017.num_doc,
+                        MAX(CASE
+                            WHEN SC0022.num_fac IS NOT NULL
+                                AND SC0017.num_fac NOT LIKE "005-%"
+                                AND SC0017.num_fac NOT LIKE "006-%"
+                            THEN 1
+                            ELSE 0
+                        END) as is_paid,
+                        MAX(CASE
+                            WHEN SC0017.num_fac IS NOT NULL
+                                AND SC0017.num_fac NOT LIKE "005-%"
+                                AND SC0017.num_fac NOT LIKE "006-%"
+                            THEN 1
+                            ELSE 0
+                        END) as is_invoiced
+                    FROM SC0017
+                    LEFT JOIN SC0022 ON SC0017.num_fac = SC0022.num_fac
+                    GROUP BY SC0017.num_doc
+                ) as invoice_status'),
+                'SC0011.num_doc',
+                '=',
+                'invoice_status.num_doc'
+            )
             ->where($baseWhere)
             ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
             ->selectRaw('
-                SUM(CASE
-                    WHEN SC0022.num_fac IS NOT NULL
-                        AND SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                    THEN 1
-                    ELSE 0
-                END) as paid_count,
-                SUM(CASE
-                    WHEN SC0022.num_fac IS NULL
-                        OR SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE "005-%"
-                        OR SC0017.num_fac LIKE "006-%"
-                    THEN 1
-                    ELSE 0
-                END) as pending_count,
-                SUM(CASE
-                    WHEN SC0022.num_fac IS NOT NULL
-                        AND SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                    THEN SC0011.tot_doc
-                    ELSE 0
-                END) as paid_amount,
-                SUM(CASE
-                    WHEN SC0022.num_fac IS NULL
-                        OR SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE "005-%"
-                        OR SC0017.num_fac LIKE "006-%"
-                    THEN SC0011.tot_doc
-                    ELSE 0
-                END) as pending_amount
+                SUM(CASE WHEN invoice_status.is_paid = 1 THEN 1 ELSE 0 END) as paid_count,
+                SUM(CASE WHEN COALESCE(invoice_status.is_paid, 0) = 0 THEN 1 ELSE 0 END) as pending_count,
+                SUM(CASE WHEN invoice_status.is_paid = 1 THEN SC0011.tot_doc ELSE 0 END) as paid_amount,
+                SUM(CASE WHEN COALESCE(invoice_status.is_paid, 0) = 0 THEN SC0011.tot_doc ELSE 0 END) as pending_amount
             ')
             ->first();
 
