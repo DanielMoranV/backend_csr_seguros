@@ -225,10 +225,15 @@ class DashboardService
     }
 
     /**
-     * An�lisis por periodo
+     * Análisis por periodo
+     * Basado en admissions_lists: Solo reportes de auditores y facturadores
+     *
+     * @param string $period Formato: YYYYMM (mes) o YYYY (año)
+     * @return array
      */
     public function getPeriodAnalysis(string $period): array
     {
+        // Determinar rango de fechas para contexto
         if (strlen($period) === 4) { // Year only
             $year = $period;
             $startDate = Carbon::createFromDate($year, 1, 1)->startOfYear()->format('Y-m-d');
@@ -241,47 +246,30 @@ class DashboardService
             $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
         }
 
-        // OPTIMIZACIÓN: Calcular agregaciones directamente en MySQL
-        $aggregations = $this->aggregationRepository->getDateRangeAggregations($startDate, $endDate);
+        // 1. Obtener admisiones desde admissions_lists usando LIKE para periodo
+        $admissions = $this->admissionRepository->getAdmissionsByPeriod($period);
 
-        // 1. Obtener admisiones
-        $admissions = $this->admissionRepository->getUniqueAdmissionsByDateRange(
-            $startDate,
-            $endDate
-        );
-
-        // 2. Enriquecer con datos de admissions_lists (facturadores y auditores)
-        $admissions = $this->admissionRepository->enrichWithAdmissionsLists($admissions, $period);
-
-        // 3. Enriquecer con auditor�as y env�os
+        // 2. Enriquecer con datos de auditorías
         $admissions = $this->admissionRepository->enrichWithAudits($admissions);
+
+        // 3. Enriquecer con datos de envíos
         $admissions = $this->admissionRepository->enrichWithShipments($admissions);
 
         // 4. Procesar estados de auditores y facturadores
         $admissions = $this->processAuditorsAndBillers($admissions);
 
-        // 5. Generar agregaciones
+        // 5. Calcular SOLO rendimiento de auditores y facturadores
         $auditorsPerformance = $this->aggregationService->calculateAuditorsPerformance($admissions);
         $billersPerformance = $this->aggregationService->calculateBillersPerformance($admissions);
 
         return [
             'summary' => [
-                'total_admissions' => $aggregations['total_admissions'],
+                'total_admissions' => count($admissions),
                 'period' => [
                     'start' => $startDate,
                     'end' => $endDate,
                 ],
             ],
-            'invoice_status_by_month' => $this->formatInvoiceStatusByMonth($aggregations['invoice_by_month']),
-            'insurers_by_month' => $this->formatInsurersByMonth($aggregations['insurers_by_month']),
-            'payment_status' => $this->formatPaymentStatus($aggregations['payment_status'], $aggregations['total_admissions']),
-            'attendance_type_analysis' => $this->formatAttendanceTypeAnalysis($aggregations['attendance_type'], $aggregations['total_admissions']),
-            'unique_patients' => $this->formatUniquePatients($aggregations['unique_patients'], $aggregations['total_admissions']),
-            'top_companies' => $this->formatTopCompanies(
-                $aggregations['top_companies_by_count'],
-                $aggregations['top_companies_by_amount'],
-                $aggregations['total_admissions']
-            ),
             'auditors_performance' => $auditorsPerformance,
             'billers_performance' => $billersPerformance,
             'admissions' => $admissions,
