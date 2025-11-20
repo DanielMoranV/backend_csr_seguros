@@ -402,7 +402,7 @@ class DashboardAdmissionRepository
                 SC0017.num_fac as invoice_number,
                 SC0017.fec_fac as invoice_date,
                 SC0022.num_fac as paid_invoice_number,
-                SC0033.fec_dev as devolution_date,
+                SC0033.fh_dev as devolution_date,
                 SC0033.num_fac as devolution_invoice_number,
                 CASE
                     WHEN SC0017.num_fac IS NULL
