@@ -62,7 +62,6 @@ class DashboardAdmissionRepository
             FROM SC0011
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
-            LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
             LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
             LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
             LEFT JOIN (
@@ -394,7 +393,6 @@ class DashboardAdmissionRepository
                 YEAR(SC0011.fec_doc) as year,
                 SC0011.cod_pac as patient_code,
                 SC0011.nom_pac as patient_name,
-                SC0004.num_hc as medical_record_number,
                 SC0011.cod_ser as service_code,
                 SC0006.nom_ser as service_name,
                 SC0011.ta_doc as type,
@@ -418,7 +416,6 @@ class DashboardAdmissionRepository
             FROM SC0011
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
-            LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
             LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
             LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
             LEFT JOIN (
