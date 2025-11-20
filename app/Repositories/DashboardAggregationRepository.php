@@ -89,48 +89,65 @@ class DashboardAggregationRepository
         // SC0022: pagos realizados (formato num_fac: "F004-0001234", diferente a SC0017)
         // Campo común: num_doc (SC0011.num_doc = SC0017.num_doc = SC0022.num_doc)
         // Lógica: Si SC0011.num_doc existe en SC0022, la factura está pagada
-        $paymentStatus = DB::connection('external_db')
+
+        // Usar subquery para agrupar por num_doc y evitar duplicados
+        $paidDocsSubquery = DB::connection('external_db')
             ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-            ->leftJoin(
-                DB::raw('(
-                    SELECT
-                        SC0017.num_doc,
-                        MAX(CASE
-                            WHEN SC0022.num_doc IS NOT NULL
-                                AND SC0017.num_fac NOT LIKE "005-%"
-                                AND SC0017.num_fac NOT LIKE "006-%"
-                                AND SC0017.num_fac NOT LIKE "009-%"
-                                AND (SC0017.num_fac LIKE "004-%" OR SC0017.num_fac LIKE "003-%")
-                            THEN 1
-                            ELSE 0
-                        END) as is_paid,
-                        MAX(CASE
-                            WHEN SC0017.num_fac IS NOT NULL
-                                AND SC0017.num_fac NOT LIKE "005-%"
-                                AND SC0017.num_fac NOT LIKE "006-%"
-                                AND SC0017.num_fac NOT LIKE "009-%"
-                                AND (SC0017.num_fac LIKE "004-%" OR SC0017.num_fac LIKE "003-%")
-                            THEN 1
-                            ELSE 0
-                        END) as has_valid_invoice
-                    FROM SC0017
-                    LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
-                    GROUP BY SC0017.num_doc
-                ) as invoice_status'),
-                'SC0011.num_doc',
-                '=',
-                'invoice_status.num_doc'
-            )
-            ->where($baseWhere)
+            ->join('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->join('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
+            ->join('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
+            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
+            ->where('SC0011.tot_doc', '>=', 0)
+            ->where('SC0011.nom_pac', '!=', '')
+            ->where('SC0011.nom_pac', '!=', 'No existe...')
             ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                SUM(CASE WHEN invoice_status.is_paid = 1 THEN 1 ELSE 0 END) as paid_count,
-                SUM(CASE WHEN COALESCE(invoice_status.has_valid_invoice, 0) = 1 AND COALESCE(invoice_status.is_paid, 0) = 0 THEN 1 ELSE 0 END) as pending_count,
-                SUM(CASE WHEN invoice_status.is_paid = 1 THEN SC0011.tot_doc ELSE 0 END) as paid_amount,
-                SUM(CASE WHEN COALESCE(invoice_status.has_valid_invoice, 0) = 1 AND COALESCE(invoice_status.is_paid, 0) = 0 THEN SC0011.tot_doc ELSE 0 END) as pending_amount
-            ')
+            ->where(function($q) {
+                $q->where('SC0017.num_fac', 'LIKE', '004-%')
+                  ->orWhere('SC0017.num_fac', 'LIKE', '003-%');
+            })
+            ->whereNotLike('SC0017.num_fac', '005-%')
+            ->whereNotLike('SC0017.num_fac', '006-%')
+            ->whereNotLike('SC0017.num_fac', '009-%')
+            ->groupBy('SC0011.num_doc', 'SC0011.tot_doc')
+            ->selectRaw('SC0011.num_doc, SC0011.tot_doc');
+
+        $paidDocs = DB::connection('external_db')
+            ->table(DB::raw("({$paidDocsSubquery->toSql()}) as paid"))
+            ->mergeBindings($paidDocsSubquery)
+            ->selectRaw('COUNT(*) as count, SUM(tot_doc) as amount')
             ->first();
+
+        $totalValidInvoicesSubquery = DB::connection('external_db')
+            ->table('SC0011')
+            ->join('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->join('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
+            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
+            ->where('SC0011.tot_doc', '>=', 0)
+            ->where('SC0011.nom_pac', '!=', '')
+            ->where('SC0011.nom_pac', '!=', 'No existe...')
+            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->where(function($q) {
+                $q->where('SC0017.num_fac', 'LIKE', '004-%')
+                  ->orWhere('SC0017.num_fac', 'LIKE', '003-%');
+            })
+            ->whereNotLike('SC0017.num_fac', '005-%')
+            ->whereNotLike('SC0017.num_fac', '006-%')
+            ->whereNotLike('SC0017.num_fac', '009-%')
+            ->groupBy('SC0011.num_doc', 'SC0011.tot_doc')
+            ->selectRaw('SC0011.num_doc, SC0011.tot_doc');
+
+        $totalValidInvoices = DB::connection('external_db')
+            ->table(DB::raw("({$totalValidInvoicesSubquery->toSql()}) as total"))
+            ->mergeBindings($totalValidInvoicesSubquery)
+            ->selectRaw('COUNT(*) as count, SUM(tot_doc) as amount')
+            ->first();
+
+        $paymentStatus = (object)[
+            'paid_count' => $paidDocs->count ?? 0,
+            'paid_amount' => $paidDocs->amount ?? 0,
+            'pending_count' => ($totalValidInvoices->count ?? 0) - ($paidDocs->count ?? 0),
+            'pending_amount' => ($totalValidInvoices->amount ?? 0) - ($paidDocs->amount ?? 0),
+        ];
 
         // 4. Análisis por tipo de atención
         $attendanceType = DB::connection('external_db')
