@@ -176,4 +176,8 @@ Route::group([
     Route::post('/date-range-analysis', [DashboardController::class, 'dateRangeAnalysis'])->name('dashboard.dateRangeAnalysis');
     Route::post('/period-analysis', [DashboardController::class, 'periodAnalysis'])->name('dashboard.periodAnalysis');
     Route::post('/clear-cache', [DashboardController::class, 'clearCache'])->name('dashboard.clearCache');
+
+    // Exportaciones a Excel
+    Route::post('/date-range-analysis/export', [DashboardController::class, 'dateRangeAnalysisExport'])->name('dashboard.dateRangeAnalysis.export');
+    Route::post('/period-analysis/export', [DashboardController::class, 'periodAnalysisExport'])->name('dashboard.periodAnalysis.export');
 });

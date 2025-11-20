@@ -276,6 +276,59 @@ class DashboardService
     }
 
     /**
+     * Análisis por periodo CON admisiones
+     * Variante del método getPeriodAnalysis que incluye el array completo de admisiones
+     * Útil para exportaciones a Excel
+     *
+     * @param string $period Formato: YYYYMM (mes) o YYYY (año)
+     * @return array
+     */
+    public function getPeriodAnalysisWithAdmissions(string $period): array
+    {
+        // Determinar rango de fechas para contexto
+        if (strlen($period) === 4) { // Year only
+            $year = $period;
+            $startDate = Carbon::createFromDate($year, 1, 1)->startOfYear()->format('Y-m-d');
+            $endDate = Carbon::createFromDate($year, 12, 31)->endOfYear()->format('Y-m-d');
+        } else { // Year and month
+            $year = substr($period, 0, 4);
+            $month = substr($period, 4, 2);
+
+            $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth()->format('Y-m-d');
+            $endDate = Carbon::createFromDate($year, $month, 1)->endOfMonth()->format('Y-m-d');
+        }
+
+        // 1. Obtener admisiones desde admissions_lists usando LIKE para periodo
+        $admissions = $this->admissionRepository->getAdmissionsByPeriod($period);
+
+        // 2. Enriquecer con datos de auditorías
+        $admissions = $this->admissionRepository->enrichWithAudits($admissions);
+
+        // 3. Enriquecer con datos de envíos
+        $admissions = $this->admissionRepository->enrichWithShipments($admissions);
+
+        // 4. Procesar estados de auditores y facturadores
+        $admissions = $this->processAuditorsAndBillers($admissions);
+
+        // 5. Calcular SOLO rendimiento de auditores y facturadores
+        $auditorsPerformance = $this->aggregationService->calculateAuditorsPerformance($admissions);
+        $billersPerformance = $this->aggregationService->calculateBillersPerformance($admissions);
+
+        return [
+            'summary' => [
+                'total_admissions' => count($admissions),
+                'period' => [
+                    'start' => $startDate,
+                    'end' => $endDate,
+                ],
+            ],
+            'auditors_performance' => $auditorsPerformance,
+            'billers_performance' => $billersPerformance,
+            'admissions' => $admissions, // INCLUIR admisiones para exportación
+        ];
+    }
+
+    /**
      * Procesar estados de auditores y facturadores
      */
     protected function processAuditorsAndBillers(array $admissions): array
