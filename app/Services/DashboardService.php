@@ -272,7 +272,6 @@ class DashboardService
             ],
             'auditors_performance' => $auditorsPerformance,
             'billers_performance' => $billersPerformance,
-            'admissions' => $admissions,
         ];
     }
 
