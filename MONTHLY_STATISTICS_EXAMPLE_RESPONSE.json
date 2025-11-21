@@ -1,0 +1,188 @@
+{
+  "summary": {
+    "total_admissions": 450,
+    "period": {
+      "start": "2025-01-01",
+      "end": "2025-03-31"
+    }
+  },
+  "invoice_status_by_month": {
+    "view_by_quantity": {
+      "months": ["Ene", "Feb", "Mar"],
+      "invoiced": [120, 145, 100],
+      "pending": [30, 30, 25]
+    },
+    "view_by_amount": {
+      "months": ["Ene", "Feb", "Mar"],
+      "invoiced": [36000.5, 48000.75, 33600.0],
+      "pending": [9000.0, 10000.0, 8400.0]
+    }
+  },
+  "insurers_by_month": {
+    "view_by_quantity": [
+      {
+        "insurance": "MAPFRE",
+        "month": 1,
+        "count": 50
+      },
+      {
+        "insurance": "PACIFICO",
+        "month": 1,
+        "count": 45
+      }
+    ],
+    "view_by_amount": [
+      {
+        "insurance": "MAPFRE",
+        "month": 1,
+        "count": 15000.25
+      },
+      {
+        "insurance": "PACIFICO",
+        "month": 1,
+        "count": 13500.0
+      }
+    ]
+  },
+  "payment_status": {
+    "view_by_quantity": {
+      "paid": 300,
+      "pending": 150
+    },
+    "view_by_amount": {
+      "paid": 120000.5,
+      "pending": 45000.75
+    }
+  },
+  "attendance_type_analysis": {
+    "view_by_quantity": [
+      {
+        "type": "Emergencia",
+        "count": 150,
+        "percentage": 33.33
+      },
+      {
+        "type": "Consulta",
+        "count": 200,
+        "percentage": 44.44
+      },
+      {
+        "type": "Cirugia",
+        "count": 100,
+        "percentage": 22.22
+      }
+    ],
+    "view_by_amount": [
+      {
+        "type": "Emergencia",
+        "amount": 60000.5,
+        "average": 400.0,
+        "percentage": 36.36
+      },
+      {
+        "type": "Consulta",
+        "amount": 50000.0,
+        "average": 250.0,
+        "percentage": 30.3
+      },
+      {
+        "type": "Cirugia",
+        "amount": 55000.75,
+        "average": 550.01,
+        "percentage": 33.33
+      }
+    ]
+  },
+  "unique_patients": {
+    "total": 365,
+    "percentage_of_admissions": 81.11
+  },
+  "top_companies": {
+    "view_by_quantity": [
+      {
+        "company": "EPS MAPFRE SALUD",
+        "count": 85,
+        "percentage": 18.89
+      },
+      {
+        "company": "PACIFICO SALUD EPS",
+        "count": 67,
+        "percentage": 14.89
+      },
+      {
+        "company": "RIMAC SEGUROS",
+        "count": 55,
+        "percentage": 12.22
+      }
+    ],
+    "view_by_amount": [
+      {
+        "company": "EPS MAPFRE SALUD",
+        "amount": 28500.75,
+        "percentage": 17.27
+      },
+      {
+        "company": "PACIFICO SALUD EPS",
+        "amount": 25300.5,
+        "percentage": 15.33
+      },
+      {
+        "company": "RIMAC SEGUROS",
+        "amount": 22000.0,
+        "percentage": 13.33
+      }
+    ]
+  },
+  "monthly_statistics": [
+    {
+      "month": 1,
+      "month_name": "Ene",
+      "unique_patients": 120,
+      "total_admissions": 150,
+      "total_amount": 45000.5,
+      "avg_amount_per_admission": 300.0,
+      "avg_admissions_per_patient": 1.25,
+      "recurrence_rate": 25.0
+    },
+    {
+      "month": 2,
+      "month_name": "Feb",
+      "unique_patients": 145,
+      "total_admissions": 175,
+      "total_amount": 58000.75,
+      "avg_amount_per_admission": 331.43,
+      "avg_admissions_per_patient": 1.21,
+      "recurrence_rate": 20.69
+    },
+    {
+      "month": 3,
+      "month_name": "Mar",
+      "unique_patients": 100,
+      "total_admissions": 125,
+      "total_amount": 42000.0,
+      "avg_amount_per_admission": 336.0,
+      "avg_admissions_per_patient": 1.25,
+      "recurrence_rate": 25.0
+    }
+  ],
+  "admissions": [
+    {
+      "number": "2025010001",
+      "attendance_date": "2025-01-15",
+      "type": "EMERGENCIA",
+      "amount": 450.5,
+      "patient_code": "P001",
+      "company": "EPS MAPFRE SALUD",
+      "doctor": "Dr. Smith",
+      "invoice_number": "001-00123",
+      "invoice_date": "2025-01-16",
+      "biller": "Maria Lopez",
+      "devolution_date": null,
+      "insurer_name": "MAPFRE",
+      "paid_invoice_number": null,
+      "month": 1,
+      "days_passed": 5,
+      "status": "Liquidado"
+    }
+  ]
+}
