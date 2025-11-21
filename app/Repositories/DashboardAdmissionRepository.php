@@ -62,6 +62,7 @@ class DashboardAdmissionRepository
             FROM SC0011
             LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
             LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
+            LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
             LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
             LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
             LEFT JOIN (
