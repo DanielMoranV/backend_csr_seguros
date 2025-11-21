@@ -193,4 +193,103 @@ class AggregationServiceTest extends TestCase
         $this->assertArrayHasKey('view_by_amount', $result);
         $this->assertCount(1, $result['billers_list']);
     }
+
+    /**
+     * Test cálculo de estadísticas mensuales
+     */
+    public function test_calculate_monthly_statistics(): void
+    {
+        $admissions = [
+            ['month' => 1, 'patient_code' => 'P001', 'amount' => 100.00, 'invoice_number' => '001-001', 'paid_invoice_number' => '001-001'],
+            ['month' => 1, 'patient_code' => 'P001', 'amount' => 150.00, 'invoice_number' => '001-002', 'paid_invoice_number' => null], // Mismo paciente, 2da atención, facturado no pagado
+            ['month' => 1, 'patient_code' => 'P002', 'amount' => 200.00, 'invoice_number' => null, 'paid_invoice_number' => null], // No facturado
+            ['month' => 2, 'patient_code' => 'P003', 'amount' => 300.00, 'invoice_number' => '001-003', 'paid_invoice_number' => '001-003'],
+            ['month' => 2, 'patient_code' => 'P004', 'amount' => 250.00, 'invoice_number' => '001-004', 'paid_invoice_number' => '001-004'],
+        ];
+
+        $result = $this->service->calculateMonthlyStatistics($admissions, '2025-01-01', '2025-02-28');
+
+        $this->assertIsArray($result);
+        $this->assertCount(2, $result); // 2 meses
+
+        // Verificar estructura del primer mes
+        $enero = $result[0];
+        $this->assertEquals(1, $enero['month']);
+        $this->assertEquals('Ene', $enero['month_name']);
+        $this->assertEquals(2, $enero['unique_patients']); // P001 y P002
+        $this->assertEquals(3, $enero['total_admissions']); // 3 atenciones
+        $this->assertEquals(450.00, $enero['total_amount']); // 100 + 150 + 200
+        $this->assertEquals(150.00, $enero['avg_amount_per_admission']); // 450 / 3
+        $this->assertEquals(1.5, $enero['avg_admissions_per_patient']); // 3 / 2
+        $this->assertEquals(50.00, $enero['recurrence_rate']); // ((3-2)/2) * 100
+
+        // Verificar estructura del segundo mes
+        $febrero = $result[1];
+        $this->assertEquals(2, $febrero['month']);
+        $this->assertEquals('Feb', $febrero['month_name']);
+        $this->assertEquals(2, $febrero['unique_patients']); // P003 y P004
+        $this->assertEquals(2, $febrero['total_admissions']); // 2 atenciones
+        $this->assertEquals(550.00, $febrero['total_amount']); // 300 + 250
+        $this->assertEquals(275.00, $febrero['avg_amount_per_admission']); // 550 / 2
+        $this->assertEquals(1.00, $febrero['avg_admissions_per_patient']); // 2 / 2
+        $this->assertEquals(0.00, $febrero['recurrence_rate']); // ((2-2)/2) * 100
+    }
+
+    /**
+     * Test estadísticas mensuales con meses sin datos
+     */
+    public function test_calculate_monthly_statistics_with_empty_months(): void
+    {
+        $admissions = [
+            ['month' => 1, 'patient_code' => 'P001', 'amount' => 100.00],
+            ['month' => 3, 'patient_code' => 'P002', 'amount' => 200.00],
+        ];
+
+        // Rango de Enero a Marzo (incluye Febrero sin datos)
+        $result = $this->service->calculateMonthlyStatistics($admissions, '2025-01-01', '2025-03-31');
+
+        $this->assertCount(3, $result); // Debe incluir Enero, Febrero y Marzo
+
+        // Verificar que Febrero existe pero con valores en cero
+        $febrero = $result[1];
+        $this->assertEquals(2, $febrero['month']);
+        $this->assertEquals('Feb', $febrero['month_name']);
+        $this->assertEquals(0, $febrero['unique_patients']);
+        $this->assertEquals(0, $febrero['total_admissions']);
+        $this->assertEquals(0, $febrero['total_amount']);
+    }
+
+    /**
+     * Test estadísticas mensuales con rango de varios años
+     */
+    public function test_calculate_monthly_statistics_cross_year(): void
+    {
+        $admissions = [
+            ['month' => 12, 'patient_code' => 'P001', 'amount' => 100.00],
+            ['month' => 1, 'patient_code' => 'P002', 'amount' => 200.00],
+        ];
+
+        // Rango de Diciembre 2024 a Enero 2025
+        $result = $this->service->calculateMonthlyStatistics($admissions, '2024-12-01', '2025-01-31');
+
+        $this->assertCount(2, $result); // Diciembre y Enero
+        $this->assertEquals(12, $result[0]['month']); // Diciembre
+        $this->assertEquals(1, $result[1]['month']); // Enero
+    }
+
+    /**
+     * Test estadísticas mensuales sin datos
+     */
+    public function test_calculate_monthly_statistics_with_no_data(): void
+    {
+        $admissions = [];
+
+        $result = $this->service->calculateMonthlyStatistics($admissions, '2025-01-01', '2025-01-31');
+
+        $this->assertCount(1, $result); // Debe retornar Enero con valores en cero
+        $this->assertEquals(1, $result[0]['month']);
+        $this->assertEquals(0, $result[0]['unique_patients']);
+        $this->assertEquals(0, $result[0]['total_admissions']);
+        $this->assertEquals(0, $result[0]['total_amount']);
+    }
 }

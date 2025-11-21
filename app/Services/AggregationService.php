@@ -370,4 +370,98 @@ class AggregationService
             'view_by_amount' => $byAmount->toArray(),
         ];
     }
+
+    /**
+     * Calcular estadísticas mensuales (pacientes únicos, atenciones y montos)
+     * Optimizado para formato de tabla
+     *
+     * @param array $admissions Array de admisiones con campos: month, patient_code, amount
+     * @param string $startDate Fecha inicio (Y-m-d) para completar meses faltantes
+     * @param string $endDate Fecha fin (Y-m-d) para completar meses faltantes
+     * @return array Array de objetos con estadísticas por mes
+     */
+    public function calculateMonthlyStatistics(array $admissions, string $startDate, string $endDate): array
+    {
+        $collection = collect($admissions);
+
+        // Calcular estadísticas por mes
+        $statsByMonth = [];
+
+        foreach ($admissions as $admission) {
+            $month = $admission['month'] ?? 0;
+            $patientCode = $admission['patient_code'] ?? null;
+            $amount = $admission['amount'] ?? 0;
+
+            if (!isset($statsByMonth[$month])) {
+                $statsByMonth[$month] = [
+                    'patients' => [],
+                    'admissions_count' => 0,
+                    'total_amount' => 0,
+                ];
+            }
+
+            // Agregar paciente único
+            if ($patientCode) {
+                $statsByMonth[$month]['patients'][$patientCode] = true;
+            }
+
+            // Incrementar contador de atenciones y monto
+            $statsByMonth[$month]['admissions_count']++;
+            $statsByMonth[$month]['total_amount'] += $amount;
+        }
+
+        // Determinar todos los meses del rango
+        $startMonth = (int)date('n', strtotime($startDate));
+        $startYear = (int)date('Y', strtotime($startDate));
+        $endMonth = (int)date('n', strtotime($endDate));
+        $endYear = (int)date('Y', strtotime($endDate));
+
+        $allMonths = [];
+        $currentYear = $startYear;
+        $currentMonth = $startMonth;
+
+        while (($currentYear < $endYear) || ($currentYear === $endYear && $currentMonth <= $endMonth)) {
+            $allMonths[] = $currentMonth;
+
+            $currentMonth++;
+            if ($currentMonth > 12) {
+                $currentMonth = 1;
+                $currentYear++;
+            }
+        }
+
+        // Construir resultado final
+        $result = [];
+
+        foreach ($allMonths as $month) {
+            $stats = $statsByMonth[$month] ?? [
+                'patients' => [],
+                'admissions_count' => 0,
+                'total_amount' => 0,
+            ];
+
+            $uniquePatientsCount = count($stats['patients']);
+            $admissionsCount = $stats['admissions_count'];
+            $totalAmount = $stats['total_amount'];
+
+            $result[] = [
+                'month' => $month,
+                'month_name' => $this->monthsEs[$month] ?? (string)$month,
+                'unique_patients' => $uniquePatientsCount,
+                'total_admissions' => $admissionsCount,
+                'total_amount' => round($totalAmount, 2),
+                'avg_amount_per_admission' => $admissionsCount > 0
+                    ? round($totalAmount / $admissionsCount, 2)
+                    : 0,
+                'avg_admissions_per_patient' => $uniquePatientsCount > 0
+                    ? round($admissionsCount / $uniquePatientsCount, 2)
+                    : 0,
+                'recurrence_rate' => $uniquePatientsCount > 0
+                    ? round((($admissionsCount - $uniquePatientsCount) / $uniquePatientsCount) * 100, 2)
+                    : 0,
+            ];
+        }
+
+        return $result;
+    }
 }
