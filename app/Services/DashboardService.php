@@ -51,6 +51,7 @@ class DashboardService
                 $aggregations['top_companies_by_amount'],
                 $aggregations['total_admissions']
             ),
+            'monthly_statistics' => $this->formatMonthlyStatistics($aggregations['monthly_statistics'], $startDate, $endDate),
         ];
 
         // Si solo se requieren agregaciones, retornar inmediatamente (MUY RÁPIDO)
@@ -63,6 +64,13 @@ class DashboardService
             $admissions = $this->admissionRepository->getUniqueAdmissionsByDateRange($startDate, $endDate);
             $admissions = $this->admissionRepository->enrichWithShipments($admissions);
             $result['admissions'] = $admissions;
+
+            // Calcular estadísticas mensuales (pacientes únicos, atenciones y montos por mes)
+            $result['monthly_statistics'] = $this->aggregationService->calculateMonthlyStatistics(
+                $admissions,
+                $startDate,
+                $endDate
+            );
         }
 
         return $result;
@@ -70,40 +78,59 @@ class DashboardService
 
     /**
      * Formatear estado de facturación por mes
+     * NUEVO: Formato de array con 3 estados (Facturado, Pagado, Pendiente)
      */
     protected function formatInvoiceStatusByMonth($data): array
     {
-        $months = [];
-        $invoiced = [];
-        $pending = [];
-        $invoicedAmounts = [];
-        $pendingAmounts = [];
-
-        $monthsEs = [
-            1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr',
-            5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago',
-            9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'
-        ];
+        $byQuantity = [];
+        $byAmount = [];
 
         foreach ($data as $row) {
-            $months[] = $monthsEs[$row->month] ?? $row->month;
-            $invoiced[] = $row->invoiced_count;
-            $pending[] = $row->pending_count;
-            $invoicedAmounts[] = round($row->invoiced_amount, 2);
-            $pendingAmounts[] = round($row->pending_amount, 2);
+            $month = $row->month;
+
+            // Estado: Facturado
+            $byQuantity[] = [
+                'status' => 'Facturado',
+                'month' => $month,
+                'count' => $row->invoiced_count ?? 0,
+            ];
+
+            $byAmount[] = [
+                'status' => 'Facturado',
+                'month' => $month,
+                'amount' => round($row->invoiced_amount ?? 0, 2),
+            ];
+
+            // Estado: Pagado
+            $byQuantity[] = [
+                'status' => 'Pagado',
+                'month' => $month,
+                'count' => $row->paid_count ?? 0,
+            ];
+
+            $byAmount[] = [
+                'status' => 'Pagado',
+                'month' => $month,
+                'amount' => round($row->paid_amount ?? 0, 2),
+            ];
+
+            // Estado: Pendiente
+            $byQuantity[] = [
+                'status' => 'Pendiente',
+                'month' => $month,
+                'count' => $row->pending_count ?? 0,
+            ];
+
+            $byAmount[] = [
+                'status' => 'Pendiente',
+                'month' => $month,
+                'amount' => round($row->pending_amount ?? 0, 2),
+            ];
         }
 
         return [
-            'view_by_quantity' => [
-                'months' => $months,
-                'invoiced' => $invoiced,
-                'pending' => $pending,
-            ],
-            'view_by_amount' => [
-                'months' => $months,
-                'invoiced' => $invoicedAmounts,
-                'pending' => $pendingAmounts,
-            ],
+            'view_by_quantity' => $byQuantity,
+            'view_by_amount' => $byAmount,
         ];
     }
 
@@ -366,6 +393,67 @@ class DashboardService
         }
 
         return $admissions;
+    }
+
+    /**
+     * Formatear estadísticas mensuales
+     */
+    protected function formatMonthlyStatistics($data, string $startDate, string $endDate): array
+    {
+        $monthsEs = [
+            1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr',
+            5 => 'May', 6 => 'Jun', 7 => 'Jul', 8 => 'Ago',
+            9 => 'Sep', 10 => 'Oct', 11 => 'Nov', 12 => 'Dic'
+        ];
+
+        // Crear un array indexado por mes con los datos de MySQL
+        $statsByMonth = [];
+        foreach ($data as $row) {
+            $statsByMonth[$row->month] = $row;
+        }
+
+        // Determinar todos los meses del rango
+        $startMonth = (int)date('n', strtotime($startDate));
+        $startYear = (int)date('Y', strtotime($startDate));
+        $endMonth = (int)date('n', strtotime($endDate));
+        $endYear = (int)date('Y', strtotime($endDate));
+
+        $result = [];
+        $currentYear = $startYear;
+        $currentMonth = $startMonth;
+
+        while (($currentYear < $endYear) || ($currentYear === $endYear && $currentMonth <= $endMonth)) {
+            $stats = $statsByMonth[$currentMonth] ?? null;
+
+            $uniquePatients = $stats ? $stats->unique_patients : 0;
+            $totalAdmissions = $stats ? $stats->total_admissions : 0;
+            $totalAmount = $stats ? $stats->total_amount : 0;
+
+            $result[] = [
+                'month' => $currentMonth,
+                'month_name' => $monthsEs[$currentMonth] ?? (string)$currentMonth,
+                'unique_patients' => $uniquePatients,
+                'total_admissions' => $totalAdmissions,
+                'total_amount' => round($totalAmount, 2),
+                'avg_amount_per_admission' => $totalAdmissions > 0
+                    ? round($totalAmount / $totalAdmissions, 2)
+                    : 0,
+                'avg_admissions_per_patient' => $uniquePatients > 0
+                    ? round($totalAdmissions / $uniquePatients, 2)
+                    : 0,
+                'recurrence_rate' => $uniquePatients > 0
+                    ? round((($totalAdmissions - $uniquePatients) / $uniquePatients) * 100, 2)
+                    : 0,
+            ];
+
+            $currentMonth++;
+            if ($currentMonth > 12) {
+                $currentMonth = 1;
+                $currentYear++;
+            }
+        }
+
+        return $result;
     }
 
     /**
