@@ -117,68 +117,15 @@ class DashboardAggregationRepository
             ->get();
 
         // 3. Estado de pagos (todas las admisiones)
-        // SC0017: facturas emitidas (formato num_fac: "004-0001234", "003-0001234")
-        // SC0022: pagos realizados (formato num_fac: "F004-0001234", diferente a SC0017)
-        // Campo común: num_doc (SC0011.num_doc = SC0017.num_doc = SC0022.num_doc)
-        // Lógica: Si SC0011.num_doc existe en SC0022, la factura está pagada
-
-        // Usar subquery para agrupar por num_doc y evitar duplicados
-        $paidDocsSubquery = DB::connection('external_db')
-            ->table('SC0011')
-            ->join('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-            ->join('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->join('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
-            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
-            ->where('SC0011.tot_doc', '>=', 0)
-            ->where('SC0011.nom_pac', '!=', '')
-            ->where('SC0011.nom_pac', '!=', 'No existe...')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->where(function($q) {
-                $q->where('SC0017.num_fac', 'LIKE', '004-%')
-                  ->orWhere('SC0017.num_fac', 'LIKE', '003-%');
-            })
-            ->whereNotLike('SC0017.num_fac', '005-%')
-            ->whereNotLike('SC0017.num_fac', '006-%')
-            ->whereNotLike('SC0017.num_fac', '009-%')
-            ->groupBy('SC0011.num_doc', 'SC0011.tot_doc')
-            ->selectRaw('SC0011.num_doc, SC0011.tot_doc');
-
-        $paidDocs = DB::connection('external_db')
-            ->table(DB::raw("({$paidDocsSubquery->toSql()}) as paid"))
-            ->mergeBindings($paidDocsSubquery)
-            ->selectRaw('COUNT(*) as count, SUM(tot_doc) as amount')
-            ->first();
-
-        $totalValidInvoicesSubquery = DB::connection('external_db')
-            ->table('SC0011')
-            ->join('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-            ->join('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
-            ->where('SC0011.tot_doc', '>=', 0)
-            ->where('SC0011.nom_pac', '!=', '')
-            ->where('SC0011.nom_pac', '!=', 'No existe...')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->where(function($q) {
-                $q->where('SC0017.num_fac', 'LIKE', '004-%')
-                  ->orWhere('SC0017.num_fac', 'LIKE', '003-%');
-            })
-            ->whereNotLike('SC0017.num_fac', '005-%')
-            ->whereNotLike('SC0017.num_fac', '006-%')
-            ->whereNotLike('SC0017.num_fac', '009-%')
-            ->groupBy('SC0011.num_doc', 'SC0011.tot_doc')
-            ->selectRaw('SC0011.num_doc, SC0011.tot_doc');
-
-        $totalValidInvoices = DB::connection('external_db')
-            ->table(DB::raw("({$totalValidInvoicesSubquery->toSql()}) as total"))
-            ->mergeBindings($totalValidInvoicesSubquery)
-            ->selectRaw('COUNT(*) as count, SUM(tot_doc) as amount')
-            ->first();
-
+        // OPTIMIZACIÓN: Calculado directamente desde invoice_by_month para evitar
+        // queries pesadas con múltiples JOINs que causan "MySQL server has gone away"
+        // Los datos de paid/pending ya están calculados por mes en $invoiceByMonth,
+        // solo necesitamos sumarlos para obtener el total del periodo
         $paymentStatus = (object)[
-            'paid_count' => $paidDocs->count ?? 0,
-            'paid_amount' => $paidDocs->amount ?? 0,
-            'pending_count' => ($totalValidInvoices->count ?? 0) - ($paidDocs->count ?? 0),
-            'pending_amount' => ($totalValidInvoices->amount ?? 0) - ($paidDocs->amount ?? 0),
+            'paid_count' => $invoiceByMonth->sum('paid_count'),
+            'paid_amount' => $invoiceByMonth->sum('paid_amount'),
+            'pending_count' => $invoiceByMonth->sum('pending_count'),
+            'pending_amount' => $invoiceByMonth->sum('pending_amount'),
         ];
 
         // 4. Análisis por tipo de atención
