@@ -262,6 +262,26 @@ class DashboardAggregationRepository
             ->orderBy('month')
             ->get();
 
+        // 8. Desglose por tipo de atención por mes
+        // Para cada mes: cantidad, monto, promedio y porcentaje por tipo de atención
+        $attendanceTypeByMonth = DB::connection('external_db')
+            ->table('SC0011')
+            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->where($baseWhere)
+            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw('
+                MONTH(SC0011.fec_doc) as month,
+                UPPER(TRIM(SC0011.ta_doc)) as type,
+                COUNT(*) as count,
+                COUNT(DISTINCT SC0011.cod_pac) as unique_patients,
+                SUM(SC0011.tot_doc) as amount,
+                AVG(SC0011.tot_doc) as average
+            ')
+            ->groupBy(DB::raw('MONTH(SC0011.fec_doc)'), DB::raw('UPPER(TRIM(SC0011.ta_doc))'))
+            ->orderBy('month')
+            ->orderByDesc('count')
+            ->get();
+
         return [
             'invoice_by_month' => $invoiceByMonth,
             'insurers_by_month' => $insurersByMonth,
@@ -272,6 +292,7 @@ class DashboardAggregationRepository
             'top_companies_by_count' => $topCompaniesByCount,
             'top_companies_by_amount' => $topCompaniesByAmount,
             'monthly_statistics' => $monthlyStatistics,
+            'attendance_type_by_month' => $attendanceTypeByMonth,
         ];
     }
 
