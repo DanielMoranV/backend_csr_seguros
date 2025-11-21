@@ -220,8 +220,6 @@ class AggregationServiceTest extends TestCase
         $this->assertEquals(3, $enero['total_admissions']); // 3 atenciones
         $this->assertEquals(450.00, $enero['total_amount']); // 100 + 150 + 200
         $this->assertEquals(150.00, $enero['avg_amount_per_admission']); // 450 / 3
-        $this->assertEquals(1.5, $enero['avg_admissions_per_patient']); // 3 / 2
-        $this->assertEquals(50.00, $enero['recurrence_rate']); // ((3-2)/2) * 100
 
         // Verificar estructura del segundo mes
         $febrero = $result[1];
@@ -231,8 +229,6 @@ class AggregationServiceTest extends TestCase
         $this->assertEquals(2, $febrero['total_admissions']); // 2 atenciones
         $this->assertEquals(550.00, $febrero['total_amount']); // 300 + 250
         $this->assertEquals(275.00, $febrero['avg_amount_per_admission']); // 550 / 2
-        $this->assertEquals(1.00, $febrero['avg_admissions_per_patient']); // 2 / 2
-        $this->assertEquals(0.00, $febrero['recurrence_rate']); // ((2-2)/2) * 100
     }
 
     /**

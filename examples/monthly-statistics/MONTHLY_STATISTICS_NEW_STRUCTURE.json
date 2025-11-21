@@ -1,0 +1,142 @@
+{
+  "monthly_statistics": [
+    {
+      "month": 2,
+      "month_name": "Feb",
+      "unique_patients": 377,
+      "total_admissions": 570,
+      "total_amount": 239950.33,
+      "avg_amount_per_admission": 420.97,
+      "by_attendance_type": {
+        "view_by_quantity": [
+          {
+            "type": "Ambulatorio",
+            "count": 428,
+            "percentage": 75.09
+          },
+          {
+            "type": "Emergencia",
+            "count": 118,
+            "percentage": 20.70
+          },
+          {
+            "type": "Hospitalario",
+            "count": 18,
+            "percentage": 3.16
+          },
+          {
+            "type": "Proceso",
+            "count": 6,
+            "percentage": 1.05
+          },
+          {
+            "type": "",
+            "count": 0,
+            "percentage": 0.00
+          }
+        ],
+        "view_by_amount": [
+          {
+            "type": "Ambulatorio",
+            "amount": 112850.50,
+            "average": 263.67,
+            "percentage": 47.03
+          },
+          {
+            "type": "Emergencia",
+            "amount": 58120.30,
+            "average": 492.55,
+            "percentage": 24.22
+          },
+          {
+            "type": "Hospitalario",
+            "amount": 62500.00,
+            "average": 3472.22,
+            "percentage": 26.04
+          },
+          {
+            "type": "Proceso",
+            "amount": 6479.53,
+            "average": 1079.92,
+            "percentage": 2.70
+          },
+          {
+            "type": "",
+            "amount": 0.00,
+            "average": 0.00,
+            "percentage": 0.00
+          }
+        ]
+      }
+    },
+    {
+      "month": 3,
+      "month_name": "Mar",
+      "unique_patients": 437,
+      "total_admissions": 641,
+      "total_amount": 354826.30,
+      "avg_amount_per_admission": 553.55,
+      "by_attendance_type": {
+        "view_by_quantity": [
+          {
+            "type": "Ambulatorio",
+            "count": 480,
+            "percentage": 74.88
+          },
+          {
+            "type": "Emergencia",
+            "count": 130,
+            "percentage": 20.28
+          },
+          {
+            "type": "Hospitalario",
+            "count": 25,
+            "percentage": 3.90
+          },
+          {
+            "type": "Proceso",
+            "count": 6,
+            "percentage": 0.94
+          },
+          {
+            "type": "",
+            "count": 0,
+            "percentage": 0.00
+          }
+        ],
+        "view_by_amount": [
+          {
+            "type": "Ambulatorio",
+            "amount": 150320.80,
+            "average": 313.17,
+            "percentage": 42.36
+          },
+          {
+            "type": "Emergencia",
+            "amount": 85640.20,
+            "average": 658.77,
+            "percentage": 24.13
+          },
+          {
+            "type": "Hospitalario",
+            "amount": 110200.00,
+            "average": 4408.00,
+            "percentage": 31.05
+          },
+          {
+            "type": "Proceso",
+            "amount": 8665.30,
+            "average": 1444.22,
+            "percentage": 2.44
+          },
+          {
+            "type": "",
+            "amount": 0.00,
+            "average": 0.00,
+            "percentage": 0.00
+          }
+        ]
+      }
+    }
+  ]
+}

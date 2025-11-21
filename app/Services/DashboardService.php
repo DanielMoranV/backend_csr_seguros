@@ -51,7 +51,12 @@ class DashboardService
                 $aggregations['top_companies_by_amount'],
                 $aggregations['total_admissions']
             ),
-            'monthly_statistics' => $this->formatMonthlyStatistics($aggregations['monthly_statistics'], $startDate, $endDate),
+            'monthly_statistics' => $this->formatMonthlyStatistics(
+                $aggregations['monthly_statistics'],
+                $aggregations['attendance_type_by_month'],
+                $startDate,
+                $endDate
+            ),
         ];
 
         // Si solo se requieren agregaciones, retornar inmediatamente (MUY RÁPIDO)
@@ -396,9 +401,9 @@ class DashboardService
     }
 
     /**
-     * Formatear estadísticas mensuales
+     * Formatear estadísticas mensuales con desglose por tipo de atención
      */
-    protected function formatMonthlyStatistics($data, string $startDate, string $endDate): array
+    protected function formatMonthlyStatistics($data, $attendanceTypeByMonth, string $startDate, string $endDate): array
     {
         $monthsEs = [
             1 => 'Ene', 2 => 'Feb', 3 => 'Mar', 4 => 'Abr',
@@ -410,6 +415,15 @@ class DashboardService
         $statsByMonth = [];
         foreach ($data as $row) {
             $statsByMonth[$row->month] = $row;
+        }
+
+        // Agrupar tipos de atención por mes
+        $attendanceByMonth = [];
+        foreach ($attendanceTypeByMonth as $row) {
+            if (!isset($attendanceByMonth[$row->month])) {
+                $attendanceByMonth[$row->month] = [];
+            }
+            $attendanceByMonth[$row->month][] = $row;
         }
 
         // Determinar todos los meses del rango
@@ -429,7 +443,7 @@ class DashboardService
             $totalAdmissions = $stats ? $stats->total_admissions : 0;
             $totalAmount = $stats ? $stats->total_amount : 0;
 
-            $result[] = [
+            $monthData = [
                 'month' => $currentMonth,
                 'month_name' => $monthsEs[$currentMonth] ?? (string)$currentMonth,
                 'unique_patients' => $uniquePatients,
@@ -438,13 +452,17 @@ class DashboardService
                 'avg_amount_per_admission' => $totalAdmissions > 0
                     ? round($totalAmount / $totalAdmissions, 2)
                     : 0,
-                'avg_admissions_per_patient' => $uniquePatients > 0
-                    ? round($totalAdmissions / $uniquePatients, 2)
-                    : 0,
-                'recurrence_rate' => $uniquePatients > 0
-                    ? round((($totalAdmissions - $uniquePatients) / $uniquePatients) * 100, 2)
-                    : 0,
             ];
+
+            // Agregar desglose por tipo de atención
+            $monthData['by_attendance_type'] = $this->formatAttendanceTypeByMonth(
+                $attendanceByMonth[$currentMonth] ?? [],
+                $uniquePatients,
+                $totalAdmissions,
+                $totalAmount
+            );
+
+            $result[] = $monthData;
 
             $currentMonth++;
             if ($currentMonth > 12) {
@@ -454,6 +472,72 @@ class DashboardService
         }
 
         return $result;
+    }
+
+    /**
+     * Formatear desglose de tipos de atención para un mes específico
+     */
+    protected function formatAttendanceTypeByMonth($types, $totalUniquePatients, $totalAdmissions, $totalAmount): array
+    {
+        // Definir todos los tipos posibles para mantener consistencia
+        $allTypes = ['AMBULATORIO', 'EMERGENCIA', 'HOSPITALARIO', 'PROCESO', ''];
+
+        $viewUniquePatients = [];
+        $viewByQuantity = [];
+        $viewByAmount = [];
+
+        // Crear índice por tipo
+        $typeIndex = [];
+        foreach ($types as $type) {
+            $typeIndex[$type->type] = $type;
+        }
+
+        // Generar resultados para todos los tipos
+        foreach ($allTypes as $typeName) {
+            $typeData = $typeIndex[$typeName] ?? null;
+
+            $count = $typeData ? $typeData->count : 0;
+            $uniquePatients = $typeData ? $typeData->unique_patients : 0;
+            $amount = $typeData ? $typeData->amount : 0;
+            $average = $typeData ? $typeData->average : 0;
+
+            // Formatear nombre del tipo
+            $formattedType = $typeName === '' ? '' : ucwords(strtolower($typeName));
+
+            // Porcentaje sobre el total de pacientes únicos del mes
+            // NOTA: La suma de porcentajes puede superar 100% porque un paciente
+            // puede tener múltiples tipos de atención en el mismo mes
+            $viewUniquePatients[] = [
+                'type' => $formattedType,
+                'unique_patients' => $uniquePatients,
+                'percentage' => $totalUniquePatients > 0
+                    ? round(($uniquePatients * 100) / $totalUniquePatients, 2)
+                    : 0,
+            ];
+
+            $viewByQuantity[] = [
+                'type' => $formattedType,
+                'count' => $count,
+                'percentage' => $totalAdmissions > 0
+                    ? round(($count * 100) / $totalAdmissions, 2)
+                    : 0,
+            ];
+
+            $viewByAmount[] = [
+                'type' => $formattedType,
+                'amount' => round($amount, 2),
+                'average' => round($average, 2),
+                'percentage' => $totalAmount > 0
+                    ? round(($amount * 100) / $totalAmount, 2)
+                    : 0,
+            ];
+        }
+
+        return [
+            'view_unique_patients' => $viewUniquePatients,
+            'view_by_quantity' => $viewByQuantity,
+            'view_by_amount' => $viewByAmount,
+        ];
     }
 
     /**
