@@ -1,0 +1,506 @@
+{
+  "summary": {
+    "total_admissions": 6523,
+    "period": {
+      "start": "2025-02-01",
+      "end": "2025-11-20"
+    }
+  },
+  "monthly_statistics": [
+    {
+      "month": 2,
+      "month_name": "Feb",
+      "unique_patients": 377,
+      "total_admissions": 612,
+      "total_amount": 272105.13,
+      "avg_amount_per_admission": 444.62,
+      "avg_admissions_per_patient": 1.62,
+      "recurrence_rate": 62.33
+    },
+    {
+      "month": 3,
+      "month_name": "Mar",
+      "unique_patients": 437,
+      "total_admissions": 690,
+      "total_amount": 427054.60,
+      "avg_amount_per_admission": 619.21,
+      "avg_admissions_per_patient": 1.58,
+      "recurrence_rate": 58.35
+    },
+    {
+      "month": 4,
+      "month_name": "Abr",
+      "unique_patients": 465,
+      "total_admissions": 695,
+      "total_amount": 325298.63,
+      "avg_amount_per_admission": 468.05,
+      "avg_admissions_per_patient": 1.49,
+      "recurrence_rate": 49.46
+    },
+    {
+      "month": 5,
+      "month_name": "May",
+      "unique_patients": 482,
+      "total_admissions": 725,
+      "total_amount": 382291.10,
+      "avg_amount_per_admission": 527.30,
+      "avg_admissions_per_patient": 1.50,
+      "recurrence_rate": 50.41
+    },
+    {
+      "month": 6,
+      "month_name": "Jun",
+      "unique_patients": 459,
+      "total_admissions": 695,
+      "total_amount": 341964.92,
+      "avg_amount_per_admission": 492.04,
+      "avg_admissions_per_patient": 1.51,
+      "recurrence_rate": 51.42
+    },
+    {
+      "month": 7,
+      "month_name": "Jul",
+      "unique_patients": 467,
+      "total_admissions": 710,
+      "total_amount": 311618.70,
+      "avg_amount_per_admission": 438.90,
+      "avg_admissions_per_patient": 1.52,
+      "recurrence_rate": 52.03
+    },
+    {
+      "month": 8,
+      "month_name": "Ago",
+      "unique_patients": 450,
+      "total_admissions": 681,
+      "total_amount": 451548.50,
+      "avg_amount_per_admission": 663.07,
+      "avg_admissions_per_patient": 1.51,
+      "recurrence_rate": 51.33
+    },
+    {
+      "month": 9,
+      "month_name": "Sep",
+      "unique_patients": 475,
+      "total_admissions": 720,
+      "total_amount": 491236.06,
+      "avg_amount_per_admission": 682.27,
+      "avg_admissions_per_patient": 1.52,
+      "recurrence_rate": 51.58
+    },
+    {
+      "month": 10,
+      "month_name": "Oct",
+      "unique_patients": 505,
+      "total_admissions": 769,
+      "total_amount": 465756.38,
+      "avg_amount_per_admission": 605.53,
+      "avg_admissions_per_patient": 1.52,
+      "recurrence_rate": 52.28
+    },
+    {
+      "month": 11,
+      "month_name": "Nov",
+      "unique_patients": 290,
+      "total_admissions": 442,
+      "total_amount": 319073.69,
+      "avg_amount_per_admission": 721.84,
+      "avg_admissions_per_patient": 1.52,
+      "recurrence_rate": 52.41
+    }
+  ],
+  "invoice_status_by_month": {
+    "view_by_quantity": [
+      {
+        "status": "Facturado",
+        "month": 2,
+        "count": 563
+      },
+      {
+        "status": "Pagado",
+        "month": 2,
+        "count": 547
+      },
+      {
+        "status": "Pendiente",
+        "month": 2,
+        "count": 49
+      },
+      {
+        "status": "Facturado",
+        "month": 3,
+        "count": 688
+      },
+      {
+        "status": "Pagado",
+        "month": 3,
+        "count": 650
+      },
+      {
+        "status": "Pendiente",
+        "month": 3,
+        "count": 2
+      },
+      {
+        "status": "Facturado",
+        "month": 4,
+        "count": 692
+      },
+      {
+        "status": "Pagado",
+        "month": 4,
+        "count": 670
+      },
+      {
+        "status": "Pendiente",
+        "month": 4,
+        "count": 3
+      },
+      {
+        "status": "Facturado",
+        "month": 5,
+        "count": 720
+      },
+      {
+        "status": "Pagado",
+        "month": 5,
+        "count": 695
+      },
+      {
+        "status": "Pendiente",
+        "month": 5,
+        "count": 5
+      },
+      {
+        "status": "Facturado",
+        "month": 6,
+        "count": 688
+      },
+      {
+        "status": "Pagado",
+        "month": 6,
+        "count": 665
+      },
+      {
+        "status": "Pendiente",
+        "month": 6,
+        "count": 7
+      },
+      {
+        "status": "Facturado",
+        "month": 7,
+        "count": 697
+      },
+      {
+        "status": "Pagado",
+        "month": 7,
+        "count": 680
+      },
+      {
+        "status": "Pendiente",
+        "month": 7,
+        "count": 13
+      },
+      {
+        "status": "Facturado",
+        "month": 8,
+        "count": 672
+      },
+      {
+        "status": "Pagado",
+        "month": 8,
+        "count": 655
+      },
+      {
+        "status": "Pendiente",
+        "month": 8,
+        "count": 9
+      },
+      {
+        "status": "Facturado",
+        "month": 9,
+        "count": 603
+      },
+      {
+        "status": "Pagado",
+        "month": 9,
+        "count": 550
+      },
+      {
+        "status": "Pendiente",
+        "month": 9,
+        "count": 117
+      },
+      {
+        "status": "Facturado",
+        "month": 10,
+        "count": 141
+      },
+      {
+        "status": "Pagado",
+        "month": 10,
+        "count": 80
+      },
+      {
+        "status": "Pendiente",
+        "month": 10,
+        "count": 628
+      },
+      {
+        "status": "Facturado",
+        "month": 11,
+        "count": 3
+      },
+      {
+        "status": "Pagado",
+        "month": 11,
+        "count": 0
+      },
+      {
+        "status": "Pendiente",
+        "month": 11,
+        "count": 439
+      }
+    ],
+    "view_by_amount": [
+      {
+        "status": "Facturado",
+        "month": 2,
+        "amount": 269094.24
+      },
+      {
+        "status": "Pagado",
+        "month": 2,
+        "amount": 260000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 2,
+        "amount": 3010.89
+      },
+      {
+        "status": "Facturado",
+        "month": 3,
+        "amount": 426591.31
+      },
+      {
+        "status": "Pagado",
+        "month": 3,
+        "amount": 410000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 3,
+        "amount": 463.29
+      },
+      {
+        "status": "Facturado",
+        "month": 4,
+        "amount": 323313.68
+      },
+      {
+        "status": "Pagado",
+        "month": 4,
+        "amount": 310000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 4,
+        "amount": 1984.95
+      },
+      {
+        "status": "Facturado",
+        "month": 5,
+        "amount": 381250.80
+      },
+      {
+        "status": "Pagado",
+        "month": 5,
+        "amount": 370000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 5,
+        "amount": 1040.30
+      },
+      {
+        "status": "Facturado",
+        "month": 6,
+        "amount": 340587.20
+      },
+      {
+        "status": "Pagado",
+        "month": 6,
+        "amount": 330000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 6,
+        "amount": 1377.72
+      },
+      {
+        "status": "Facturado",
+        "month": 7,
+        "amount": 308648.65
+      },
+      {
+        "status": "Pagado",
+        "month": 7,
+        "amount": 298000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 7,
+        "amount": 2970.05
+      },
+      {
+        "status": "Facturado",
+        "month": 8,
+        "amount": 451061.60
+      },
+      {
+        "status": "Pagado",
+        "month": 8,
+        "amount": 440000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 8,
+        "amount": 486.90
+      },
+      {
+        "status": "Facturado",
+        "month": 9,
+        "amount": 427686.36
+      },
+      {
+        "status": "Pagado",
+        "month": 9,
+        "amount": 380000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 9,
+        "amount": 63549.70
+      },
+      {
+        "status": "Facturado",
+        "month": 10,
+        "amount": 43405.00
+      },
+      {
+        "status": "Pagado",
+        "month": 10,
+        "amount": 25000.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 10,
+        "amount": 422351.38
+      },
+      {
+        "status": "Facturado",
+        "month": 11,
+        "amount": 965.52
+      },
+      {
+        "status": "Pagado",
+        "month": 11,
+        "amount": 0.00
+      },
+      {
+        "status": "Pendiente",
+        "month": 11,
+        "amount": 318108.59
+      }
+    ]
+  },
+  "payment_status": {
+    "view_by_quantity": {
+      "paid": 3820,
+      "pending": 1488
+    },
+    "view_by_amount": {
+      "paid": 1724321.63,
+      "pending": 997974.94
+    }
+  },
+  "attendance_type_analysis": {
+    "view_by_quantity": [
+      {
+        "type": "Ambulatorio",
+        "count": 4906,
+        "percentage": 75.21
+      },
+      {
+        "type": "Emergencia",
+        "count": 1359,
+        "percentage": 20.83
+      },
+      {
+        "type": "Hospitalario",
+        "count": 203,
+        "percentage": 3.11
+      }
+    ],
+    "view_by_amount": [
+      {
+        "type": "Ambulatorio",
+        "amount": 1668429.86,
+        "average": 340.08,
+        "percentage": 47.29
+      },
+      {
+        "type": "Emergencia",
+        "amount": 668552.07,
+        "average": 491.94,
+        "percentage": 18.95
+      },
+      {
+        "type": "Hospitalario",
+        "amount": 1072201.43,
+        "average": 5281.78,
+        "percentage": 30.39
+      }
+    ]
+  },
+  "unique_patients": {
+    "total": 2332,
+    "percentage_of_admissions": 35.75
+  },
+  "top_companies": {
+    "view_by_quantity": [
+      {
+        "company": "PODER JUDICIAL",
+        "count": 660,
+        "percentage": 10.12
+      },
+      {
+        "company": "AUNA",
+        "count": 332,
+        "percentage": 5.09
+      },
+      {
+        "company": "CMAC PIURA S.A.C.",
+        "count": 179,
+        "percentage": 2.74
+      }
+    ],
+    "view_by_amount": [
+      {
+        "company": "PODER JUDICIAL",
+        "amount": 319623.51,
+        "percentage": 32.65
+      },
+      {
+        "company": "INDUSTRIA PERUANA PANELES DE  PVC SAC",
+        "amount": 123097.49,
+        "percentage": 12.57
+      },
+      {
+        "company": "AUNA",
+        "amount": 103628.23,
+        "percentage": 10.59
+      }
+    ]
+  }
+}
