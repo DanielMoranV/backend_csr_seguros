@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InsurerController;
 use App\Http\Controllers\MedicalRecordController;
 use App\Http\Controllers\AdmissionController;
@@ -15,6 +16,9 @@ use App\Http\Controllers\CustomQueryController;
 use App\Http\Controllers\MedicalRecordRequestController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\DashboardController;
+
+// Health Check
+Route::get('/health', [HealthController::class, 'check']);
 
 // Authentication Routes
 Route::prefix('auth')->group(function () {
