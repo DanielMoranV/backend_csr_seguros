@@ -1,0 +1,7 @@
+tunnel: seguros-api-tunnel
+credentials-file: /home/csr/Code/backend_csr_seguros/docker/cloudflare/credentials.json
+
+ingress:
+  - hostname: api.seguros.net.pe
+    service: http://localhost:8082
+  - service: http_status:404

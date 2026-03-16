@@ -1,0 +1,18 @@
+[Unit]
+Description=Cloudflare Tunnel - CSR Seguros API
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=csr
+WorkingDirectory=/home/csr/Code/backend_csr_seguros
+ExecStart=/usr/bin/cloudflared tunnel --config /home/csr/Code/backend_csr_seguros/docker/cloudflare/config.yml run seguros-api-tunnel
+Restart=on-failure
+RestartSec=5s
+StandardOutput=append:/home/csr/Code/backend_csr_seguros/cloudflared.log
+StandardError=append:/home/csr/Code/backend_csr_seguros/cloudflared.log
+
+[Install]
+WantedBy=multi-user.target
