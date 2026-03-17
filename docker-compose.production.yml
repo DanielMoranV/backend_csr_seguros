@@ -28,6 +28,7 @@ services:
         condition: service_healthy
     networks:
       - seguros_network
+      - csr_network
     restart: unless-stopped
     extra_hosts:
       - "host.docker.internal:172.17.0.1"
@@ -137,3 +138,6 @@ volumes:
 networks:
   seguros_network:
     driver: bridge
+  csr_network:
+    external: true
+    name: csr-api_csr_network
