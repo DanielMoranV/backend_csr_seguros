@@ -3,142 +3,127 @@
 namespace App\Repositories;
 
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class DashboardAdmissionRepository
 {
     /**
-     * Obtener admisiones deduplicadas con factura más reciente
-     * OPTIMIZADO: Usa subquery con MAX para deduplicar en base de datos (compatible con MySQL 5.7+)
+     * Obtener admisiones deduplicadas con factura más reciente.
+     * Solo se considera factura válida la serie 003 o 004 (política clínica).
      */
     public function getUniqueAdmissionsByDateRange(string $startDate, string $endDate): array
     {
-        // OPTIMIZACIÓN: Deduplicación usando subquery con MAX
-        // Evita traer datos duplicados a PHP y procesarlos allí
-
-        // Escapar valores para evitar SQL injection
         $startDateQuoted = DB::connection('external_db')->getPdo()->quote($startDate);
-        $endDateQuoted = DB::connection('external_db')->getPdo()->quote($endDate);
+        $endDateQuoted   = DB::connection('external_db')->getPdo()->quote($endDate);
 
-        // Subquery para obtener la fecha de factura más reciente por cada admisión
-        // Prioriza facturas válidas (no 005-* ni 006-*) sobre temporales
         $sql = "
             SELECT
-                SC0011.num_doc as number,
-                SC0011.fec_doc as attendance_date,
-                SC0011.nom_pac as patient,
-                SC0011.hi_doc as attendance_hour,
-                SC0011.ta_doc as type,
-                SC0011.tot_doc as amount,
-                SC0011.cod_pac as patient_code,
-                SC0011.clos_doc as is_closed,
-                SC0003.nom_emp as company,
-                SC0006.nom_ser as doctor,
-                SC0004.nh_pac as medical_record_number,
-                SC0017.num_fac as invoice_number,
-                SC0017.fec_fac as invoice_date,
-                SC0017.uc_sis as biller,
-                SC0033.fh_dev as devolution_date,
-                SC0033.num_fac as devolution_invoice_number,
-                SC0002.nom_cia as insurer_name,
-                SC0022.num_fac as paid_invoice_number,
-                MONTH(SC0011.fec_doc) as month,
-                DATEDIFF(CURDATE(), SC0011.fec_doc) as days_passed,
+                a.numero_documento                        AS number,
+                a.fecha_hora_atencion                     AS attendance_date,
+                p.nombre_paciente                         AS patient,
+                a.fecha_hora_atencion                     AS attendance_hour,
+                a.tipo_atencion                           AS type,
+                a.total                                   AS amount,
+                a.codigo_paciente                         AS patient_code,
+                a.atencion_cerrada                        AS is_closed,
+                e.nombre_empresa                          AS company,
+                sm.nombre_medico                          AS doctor,
+                p.numero_historia                         AS medical_record_number,
+                c.numero_factura                          AS invoice_number,
+                c.fecha_emision                           AS invoice_date,
+                c.usuario_creacion                        AS biller,
+                d.fecha_devolucion                        AS devolution_date,
+                d.numero_factura                          AS devolution_invoice_number,
+                as2.nombre_aseguradora                    AS insurer_name,
+                ps.numero_factura                         AS paid_invoice_number,
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                (CURRENT_DATE - a.fecha_hora_atencion::date) AS days_passed,
                 CASE
-                    WHEN SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE '005-%'
-                        OR SC0017.num_fac LIKE '006-%'
+                    WHEN c.numero_factura IS NULL
+                        OR (c.numero_factura NOT LIKE '003-%' AND c.numero_factura NOT LIKE '004-%')
                     THEN 'Pendiente'
 
-                    WHEN SC0033.fh_dev IS NOT NULL
-                        AND SC0022.num_fac IS NULL
+                    WHEN d.fecha_devolucion IS NOT NULL
+                        AND ps.numero_factura IS NULL
                     THEN 'Devolución'
 
-                    WHEN SC0022.num_fac IS NOT NULL
+                    WHEN ps.numero_factura IS NOT NULL
                     THEN 'Pagado'
 
                     ELSE 'Liquidado'
-                END as status
-            FROM SC0011
-            LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
-            LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
-            LEFT JOIN SC0004 ON SC0011.cod_pac = SC0004.cod_pac
-            LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
-            LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
+                END AS status
+            FROM sisclin.atenciones a
+            LEFT JOIN sisclin.aseguradoras as2 ON a.aseguradora_id = as2.id
+            LEFT JOIN sisclin.empresas e ON a.empresa_id = e.id
+            LEFT JOIN sisclin.pacientes p ON a.paciente_id = p.id
+            LEFT JOIN sisclin.servicios_medicos sm ON a.servicio_medico_id = sm.id
+            LEFT JOIN sisclin.devoluciones d ON d.comprobante_id = (
+                SELECT id FROM sisclin.comprobantes WHERE atencion_id = a.id LIMIT 1
+            )
             LEFT JOIN (
                 SELECT
-                    num_doc,
+                    atencion_id,
                     MAX(CASE
-                        WHEN num_fac NOT LIKE '005-%' AND num_fac NOT LIKE '006-%' AND num_fac NOT LIKE '009-%'
-                            AND (num_fac LIKE '004-%' OR num_fac LIKE '003-%')
-                        THEN CONCAT(fec_fac, '|', num_fac)
-                        ELSE CONCAT(fec_fac, '|Z|', num_fac)
-                    END) as max_invoice_key
-                FROM SC0017
-                GROUP BY num_doc
-            ) AS latest ON SC0011.num_doc = latest.num_doc
-            LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
-                AND CONCAT(SC0017.fec_fac, '|', CASE
-                    WHEN SC0017.num_fac NOT LIKE '005-%' AND SC0017.num_fac NOT LIKE '006-%' AND SC0017.num_fac NOT LIKE '009-%'
-                        AND (SC0017.num_fac LIKE '004-%' OR SC0017.num_fac LIKE '003-%')
-                    THEN SC0017.num_fac
-                    ELSE CONCAT('Z|', SC0017.num_fac)
-                END) = latest.max_invoice_key
-            LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
-            WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
-                AND SC0011.tot_doc >= 0
-                AND SC0011.nom_pac != ''
-                AND SC0011.nom_pac != 'No existe...'
-                AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
+                        WHEN numero_factura LIKE '003-%' OR numero_factura LIKE '004-%'
+                        THEN fecha_emision::text || '|' || numero_factura
+                        ELSE NULL
+                    END) AS max_invoice_key
+                FROM sisclin.comprobantes
+                GROUP BY atencion_id
+            ) latest ON a.id = latest.atencion_id
+            LEFT JOIN sisclin.comprobantes c ON a.id = c.atencion_id
+                AND latest.max_invoice_key IS NOT NULL
+                AND (c.fecha_emision::text || '|' || c.numero_factura) = latest.max_invoice_key
+            LEFT JOIN sisclin.pagos_seguros ps ON c.numero_factura = ps.numero_factura
+            WHERE a.fecha_hora_atencion BETWEEN {$startDateQuoted} AND {$endDateQuoted}
+                AND a.total >= 0
+                AND p.nombre_paciente != ''
+                AND p.nombre_paciente != 'No existe...'
+                AND as2.nombre_aseguradora NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
         ";
 
         $results = DB::connection('external_db')->select($sql);
 
-        // Convertir stdClass a array
         return array_map(fn($item) => (array) $item, $results);
     }
 
     /**
      * Obtener admisiones SOLO para agregaciones (sin enriquecimiento)
-     * OPTIMIZADO: Query mínimo solo con campos necesarios para cálculos
      */
     public function getAdmissionsForAggregation(string $startDate, string $endDate): array
     {
-        // Escapar valores para evitar SQL injection
         $startDateQuoted = DB::connection('external_db')->getPdo()->quote($startDate);
-        $endDateQuoted = DB::connection('external_db')->getPdo()->quote($endDate);
+        $endDateQuoted   = DB::connection('external_db')->getPdo()->quote($endDate);
 
-        // Query ultra optimizado: solo campos para agregaciones
         $sql = "
             SELECT
-                SC0011.num_doc as number,
-                MONTH(SC0011.fec_doc) as month,
-                SC0011.ta_doc as type,
-                SC0011.tot_doc as amount,
-                SC0011.cod_pac as patient_code,
-                SC0003.nom_emp as company,
-                SC0002.nom_cia as insurer_name,
-                SC0017.num_fac as invoice_number,
-                SC0022.num_fac as paid_invoice_number,
+                a.numero_documento                        AS number,
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                a.tipo_atencion                           AS type,
+                a.total                                   AS amount,
+                a.codigo_paciente                         AS patient_code,
+                e.nombre_empresa                          AS company,
+                as2.nombre_aseguradora                    AS insurer_name,
+                c.numero_factura                          AS invoice_number,
+                ps.numero_factura                         AS paid_invoice_number,
                 CASE
-                    WHEN SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE '005-%'
-                        OR SC0017.num_fac LIKE '006-%'
+                    WHEN c.numero_factura IS NULL
+                        OR (c.numero_factura NOT LIKE '003-%' AND c.numero_factura NOT LIKE '004-%')
                     THEN 'Pendiente'
-                    WHEN SC0022.num_fac IS NOT NULL
+                    WHEN ps.numero_factura IS NOT NULL
                     THEN 'Pagado'
                     ELSE 'Liquidado'
-                END as status
-            FROM SC0011
-            LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
-            LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
-            LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
-            LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
-            WHERE SC0011.fec_doc BETWEEN {$startDateQuoted} AND {$endDateQuoted}
-                AND SC0011.tot_doc >= 0
-                AND SC0011.nom_pac != ''
-                AND SC0011.nom_pac != 'No existe...'
-                AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
+                END AS status
+            FROM sisclin.atenciones a
+            LEFT JOIN sisclin.empresas e ON a.empresa_id = e.id
+            LEFT JOIN sisclin.aseguradoras as2 ON a.aseguradora_id = as2.id
+            LEFT JOIN sisclin.comprobantes c ON a.id = c.atencion_id
+                AND (c.numero_factura LIKE '003-%' OR c.numero_factura LIKE '004-%')
+            LEFT JOIN sisclin.pagos_seguros ps ON c.numero_factura = ps.numero_factura
+            WHERE a.fecha_hora_atencion BETWEEN {$startDateQuoted} AND {$endDateQuoted}
+                AND a.total >= 0
+                AND (SELECT nombre_paciente FROM sisclin.pacientes WHERE id = a.paciente_id LIMIT 1) != ''
+                AND (SELECT nombre_paciente FROM sisclin.pacientes WHERE id = a.paciente_id LIMIT 1) != 'No existe...'
+                AND as2.nombre_aseguradora NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
         ";
 
         $results = DB::connection('external_db')->select($sql);
@@ -156,73 +141,75 @@ class DashboardAdmissionRepository
         }
 
         $baseQuery = $this->buildBaseQuery()
-            ->whereIn('SC0011.num_doc', $numbers)
-            ->orderByDesc('SC0011.num_doc');
+            ->whereIn('a.numero_documento', $numbers)
+            ->orderByDesc('a.numero_documento');
 
         return $baseQuery->get()->map(fn($item) => (array) $item)->all();
     }
 
     /**
-     * Query base con todos los joins necesarios
-     * Incluye todas las tablas del sistema legado SC00XX
+     * Query base con todos los joins necesarios.
+     * Factura válida = serie 003 o 004.
      */
     protected function buildBaseQuery()
     {
         return DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->leftJoin('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
-            ->leftJoin('SC0033', 'SC0011.num_doc', '=', 'SC0033.num_doc')
-            ->leftJoin('SC0006', 'SC0011.cod_ser', '=', 'SC0006.cod_ser')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-            ->leftJoin('SC0003', 'SC0011.cod_emp', '=', 'SC0003.cod_emp')
-            ->leftJoin('SC0004', 'SC0011.cod_pac', '=', 'SC0004.cod_pac')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
+            ->leftJoin('sisclin.empresas as e', 'a.empresa_id', '=', 'e.id')
+            ->leftJoin('sisclin.pacientes as p', 'a.paciente_id', '=', 'p.id')
+            ->leftJoin('sisclin.servicios_medicos as sm', 'a.servicio_medico_id', '=', 'sm.id')
+            ->leftJoin('sisclin.comprobantes as c', function ($join) {
+                $join->on('a.id', '=', 'c.atencion_id')
+                    ->where(function ($q) {
+                        $q->where('c.numero_factura', 'LIKE', '003-%')
+                          ->orWhere('c.numero_factura', 'LIKE', '004-%');
+                    });
+            })
+            ->leftJoin('sisclin.pagos_seguros as ps', 'c.numero_factura', '=', 'ps.numero_factura')
+            ->leftJoin('sisclin.devoluciones as d', 'c.id', '=', 'd.comprobante_id')
             ->select([
-                'SC0011.num_doc as number',
-                'SC0011.fec_doc as attendance_date',
-                'SC0011.nom_pac as patient',
-                'SC0011.hi_doc as attendance_hour',
-                'SC0011.ta_doc as type',
-                'SC0011.tot_doc as amount',
-                'SC0011.cod_pac as patient_code',
-                'SC0011.clos_doc as is_closed',
-                'SC0003.nom_emp as company',
-                'SC0006.nom_ser as doctor',
-                'SC0004.nh_pac as medical_record_number',
-                'SC0017.num_fac as invoice_number',
-                'SC0017.fec_fac as invoice_date',
-                'SC0017.uc_sis as biller',
-                'SC0033.fh_dev as devolution_date',
-                'SC0033.num_fac as devolution_invoice_number',
-                'SC0002.nom_cia as insurer_name',
-                'SC0022.num_fac as paid_invoice_number',
-                // Campos calculados
-                DB::raw('MONTH(SC0011.fec_doc) as month'),
-                DB::raw('DATEDIFF(CURDATE(), SC0011.fec_doc) as days_passed'),
-                // CASE para determinar el estado de facturación
-                DB::raw('
+                'a.numero_documento as number',
+                'a.fecha_hora_atencion as attendance_date',
+                'p.nombre_paciente as patient',
+                'a.fecha_hora_atencion as attendance_hour',
+                'a.tipo_atencion as type',
+                'a.total as amount',
+                'a.codigo_paciente as patient_code',
+                'a.atencion_cerrada as is_closed',
+                'e.nombre_empresa as company',
+                'sm.nombre_medico as doctor',
+                'p.numero_historia as medical_record_number',
+                'c.numero_factura as invoice_number',
+                'c.fecha_emision as invoice_date',
+                'c.usuario_creacion as biller',
+                'd.fecha_devolucion as devolution_date',
+                'd.numero_factura as devolution_invoice_number',
+                'as2.nombre_aseguradora as insurer_name',
+                'ps.numero_factura as paid_invoice_number',
+                DB::raw('EXTRACT(MONTH FROM a.fecha_hora_atencion) as month'),
+                DB::raw('(CURRENT_DATE - a.fecha_hora_atencion::date) as days_passed'),
+                DB::raw("
                     CASE
-                        WHEN SC0017.num_fac IS NULL
-                            OR SC0017.num_fac LIKE "005-%"
-                            OR SC0017.num_fac LIKE "006-%"
-                        THEN "Pendiente"
+                        WHEN c.numero_factura IS NULL
+                            OR (c.numero_factura NOT LIKE '003-%' AND c.numero_factura NOT LIKE '004-%')
+                        THEN 'Pendiente'
 
-                        WHEN SC0033.fh_dev IS NOT NULL
-                            AND SC0022.num_fac IS NULL
-                        THEN "Devolución"
+                        WHEN d.fecha_devolucion IS NOT NULL
+                            AND ps.numero_factura IS NULL
+                        THEN 'Devolución'
 
-                        WHEN SC0022.num_fac IS NOT NULL
-                        THEN "Pagado"
+                        WHEN ps.numero_factura IS NOT NULL
+                        THEN 'Pagado'
 
-                        ELSE "Liquidado"
+                        ELSE 'Liquidado'
                     END as status
-                ')
+                ")
             ]);
     }
 
     /**
-     * Enriquecer admisiones con datos de envíos (MySQL Aplicación)
-     * Consulta la tabla shipments para determinar si una admisión fue enviada
+     * Enriquecer admisiones con datos de envíos
      */
     public function enrichWithShipments(array $admissions): array
     {
@@ -230,15 +217,12 @@ class DashboardAdmissionRepository
             return $admissions;
         }
 
-        // Optimización: Usar array_column en lugar de Collection
         $invoiceNumbers = array_values(array_unique(array_filter(array_column($admissions, 'invoice_number'))));
 
         if (empty($invoiceNumbers)) {
             return $admissions;
         }
 
-        // Consultar tabla shipments en la base de datos de aplicación
-        // Optimización: Seleccionar solo campos necesarios
         $shipments = DB::table('shipments')
             ->select('invoice_number', 'verified_shipment_date')
             ->whereIn('invoice_number', $invoiceNumbers)
@@ -246,7 +230,6 @@ class DashboardAdmissionRepository
             ->get()
             ->keyBy('invoice_number');
 
-        // Optimización: Convertir a array nativo para acceso más rápido
         $shipmentsArray = [];
         foreach ($shipments as $key => $shipment) {
             $shipmentsArray[$key] = $shipment->verified_shipment_date;
@@ -254,7 +237,6 @@ class DashboardAdmissionRepository
 
         foreach ($admissions as &$admission) {
             if (isset($admission['invoice_number']) && isset($shipmentsArray[$admission['invoice_number']])) {
-                // Si tiene envío verificado y aún no está clasificado como Pagado/Devolución
                 if ($admission['status'] === 'Liquidado') {
                     $admission['status'] = 'Enviado';
                 }
@@ -266,8 +248,7 @@ class DashboardAdmissionRepository
     }
 
     /**
-     * Enriquecer admisiones con datos de auditorías (MySQL Aplicación)
-     * Consulta la tabla audits para obtener información de auditoría
+     * Enriquecer admisiones con datos de auditorías
      */
     public function enrichWithAudits(array $admissions): array
     {
@@ -275,20 +256,17 @@ class DashboardAdmissionRepository
             return $admissions;
         }
 
-        // Optimización: Usar array_column en lugar de Collection
         $admissionNumbers = array_values(array_unique(array_column($admissions, 'number')));
 
         if (empty($admissionNumbers)) {
             return $admissions;
         }
 
-        // Consultar tabla audits en la base de datos de aplicación
         $audits = DB::table('audits')
             ->whereIn('admission_number', $admissionNumbers)
             ->get()
             ->keyBy('admission_number');
 
-        // Optimización: Evitar json_decode(json_encode()), convertir directamente
         $auditsArray = [];
         foreach ($audits as $key => $audit) {
             $auditsArray[$key] = (array) $audit;
@@ -302,8 +280,7 @@ class DashboardAdmissionRepository
     }
 
     /**
-     * Enriquecer admisiones con datos de admissions_lists (MySQL Aplicación)
-     * Obtiene información de facturadores y auditores por periodo
+     * Enriquecer admisiones con datos de admissions_lists
      */
     public function enrichWithAdmissionsLists(array $admissions, string $period): array
     {
@@ -311,21 +288,18 @@ class DashboardAdmissionRepository
             return $admissions;
         }
 
-        // Optimización: Usar array_column en lugar de Collection
         $admissionNumbers = array_values(array_unique(array_column($admissions, 'number')));
 
         if (empty($admissionNumbers)) {
             return $admissions;
         }
 
-        // Consultar tabla admissions_lists en la base de datos de aplicación
         $admissionsLists = DB::table('admissions_lists')
             ->where('period', $period)
             ->whereIn('admission_number', $admissionNumbers)
             ->get()
             ->keyBy('admission_number');
 
-        // Optimización: Evitar json_decode(json_encode()), convertir directamente
         $listsArray = [];
         foreach ($admissionsLists as $key => $list) {
             $listsArray[$key] = (array) $list;
@@ -335,7 +309,6 @@ class DashboardAdmissionRepository
             if (isset($listsArray[$admission['number']])) {
                 $listData = $listsArray[$admission['number']];
                 $admission['admissions_list'] = $listData;
-                // Sobrescribir biller si existe en admissions_lists
                 if (!empty($listData['biller'])) {
                     $admission['biller'] = $listData['biller'];
                 }
@@ -347,19 +320,11 @@ class DashboardAdmissionRepository
 
     /**
      * Obtener admisiones basadas en el periodo de admissions_lists
-     * Usa LIKE para buscar por año o mes específico
-     *
-     * @param string $period Formato: YYYYMM (mes) o YYYY (año)
-     * @return array Admisiones completas con datos de SC00XX + biller de admissions_lists
      */
     public function getAdmissionsByPeriod(string $period): array
     {
-        // Determinar el patrón de búsqueda
-        // Si es año (4 dígitos): period LIKE '2025%'
-        // Si es mes (6 dígitos): period = '202511'
         $periodPattern = strlen($period) === 4 ? $period . '%' : $period;
 
-        // 1. Obtener admission_numbers desde admissions_lists
         $admissionsLists = DB::table('admissions_lists')
             ->where('period', 'LIKE', $periodPattern)
             ->select('admission_number', 'period', 'biller')
@@ -369,8 +334,7 @@ class DashboardAdmissionRepository
             return [];
         }
 
-        // Convertir a array para mejor rendimiento
-        $listsArray = [];
+        $listsArray      = [];
         $admissionNumbers = [];
         foreach ($admissionsLists as $list) {
             $listsArray[$list->admission_number] = [
@@ -380,80 +344,74 @@ class DashboardAdmissionRepository
             $admissionNumbers[] = $list->admission_number;
         }
 
-        // 2. Obtener admisiones completas de la base de datos legacy
-        $admissionNumbersQuoted = implode(',', array_map(function($num) {
+        $admissionNumbersQuoted = implode(',', array_map(function ($num) {
             return DB::connection('external_db')->getPdo()->quote($num);
         }, $admissionNumbers));
 
         $sql = "
             SELECT
-                SC0011.num_doc as number,
-                SC0011.fec_doc as attendance_date,
-                SC0011.fec_doc as date,
-                MONTH(SC0011.fec_doc) as month,
-                YEAR(SC0011.fec_doc) as year,
-                SC0011.cod_pac as patient_code,
-                SC0011.nom_pac as patient_name,
-                SC0011.cod_ser as service_code,
-                SC0006.nom_ser as service_name,
-                SC0011.ta_doc as type,
-                SC0011.tot_doc as amount,
-                SC0002.nom_cia as insurer_name,
-                SC0003.nom_emp as company,
-                SC0017.num_fac as invoice_number,
-                SC0017.fec_fac as invoice_date,
-                SC0022.num_fac as paid_invoice_number,
-                SC0033.fh_dev as devolution_date,
-                SC0033.num_fac as devolution_invoice_number,
+                a.numero_documento                        AS number,
+                a.fecha_hora_atencion                     AS attendance_date,
+                a.fecha_hora_atencion                     AS date,
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                EXTRACT(YEAR FROM a.fecha_hora_atencion)  AS year,
+                a.codigo_paciente                         AS patient_code,
+                p.nombre_paciente                         AS patient_name,
+                sm.codigo_servicio_medico                 AS service_code,
+                sm.nombre_servicio                        AS service_name,
+                a.tipo_atencion                           AS type,
+                a.total                                   AS amount,
+                as2.nombre_aseguradora                    AS insurer_name,
+                e.nombre_empresa                          AS company,
+                c.numero_factura                          AS invoice_number,
+                c.fecha_emision                           AS invoice_date,
+                ps.numero_factura                         AS paid_invoice_number,
+                d.fecha_devolucion                        AS devolution_date,
+                d.numero_factura                          AS devolution_invoice_number,
                 CASE
-                    WHEN SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE '005-%'
-                        OR SC0017.num_fac LIKE '006-%'
+                    WHEN c.numero_factura IS NULL
+                        OR (c.numero_factura NOT LIKE '003-%' AND c.numero_factura NOT LIKE '004-%')
                     THEN 'Pendiente'
-                    WHEN SC0022.num_fac IS NOT NULL
+                    WHEN ps.numero_factura IS NOT NULL
                     THEN 'Pagado'
                     ELSE 'Liquidado'
-                END as status
-            FROM SC0011
-            LEFT JOIN SC0002 ON LEFT(SC0011.cod_emp, 2) = SC0002.cod_cia
-            LEFT JOIN SC0003 ON SC0011.cod_emp = SC0003.cod_emp
-            LEFT JOIN SC0006 ON SC0011.cod_ser = SC0006.cod_ser
-            LEFT JOIN SC0033 ON SC0011.num_doc = SC0033.num_doc
+                END AS status
+            FROM sisclin.atenciones a
+            LEFT JOIN sisclin.aseguradoras as2 ON a.aseguradora_id = as2.id
+            LEFT JOIN sisclin.empresas e ON a.empresa_id = e.id
+            LEFT JOIN sisclin.pacientes p ON a.paciente_id = p.id
+            LEFT JOIN sisclin.servicios_medicos sm ON a.servicio_medico_id = sm.id
+            LEFT JOIN sisclin.devoluciones d ON d.comprobante_id = (
+                SELECT id FROM sisclin.comprobantes
+                WHERE atencion_id = a.id
+                  AND (numero_factura LIKE '003-%' OR numero_factura LIKE '004-%')
+                LIMIT 1
+            )
             LEFT JOIN (
                 SELECT
-                    num_doc,
-                    MAX(CASE
-                        WHEN num_fac NOT LIKE '005-%' AND num_fac NOT LIKE '006-%' AND num_fac NOT LIKE '009-%'
-                            AND (num_fac LIKE '004-%' OR num_fac LIKE '003-%')
-                        THEN CONCAT(fec_fac, '|', num_fac)
-                        ELSE CONCAT(fec_fac, '|Z|', num_fac)
-                    END) as max_invoice_key
-                FROM SC0017
-                GROUP BY num_doc
-            ) AS latest ON SC0011.num_doc = latest.num_doc
-            LEFT JOIN SC0017 ON SC0011.num_doc = SC0017.num_doc
-                AND CONCAT(SC0017.fec_fac, '|', CASE
-                    WHEN SC0017.num_fac NOT LIKE '005-%' AND SC0017.num_fac NOT LIKE '006-%' AND SC0017.num_fac NOT LIKE '009-%'
-                        AND (SC0017.num_fac LIKE '004-%' OR SC0017.num_fac LIKE '003-%')
-                    THEN SC0017.num_fac
-                    ELSE CONCAT('Z|', SC0017.num_fac)
-                END) = latest.max_invoice_key
-            LEFT JOIN SC0022 ON SC0017.num_doc = SC0022.num_doc
-            WHERE SC0011.num_doc IN ({$admissionNumbersQuoted})
-                AND SC0011.tot_doc >= 0
-                AND SC0011.nom_pac != ''
-                AND SC0011.nom_pac != 'No existe...'
-                AND SC0002.nom_cia NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
+                    atencion_id,
+                    MAX(fecha_emision::text || '|' || numero_factura) AS max_invoice_key
+                FROM sisclin.comprobantes
+                WHERE numero_factura LIKE '003-%' OR numero_factura LIKE '004-%'
+                GROUP BY atencion_id
+            ) latest ON a.id = latest.atencion_id
+            LEFT JOIN sisclin.comprobantes c ON a.id = c.atencion_id
+                AND latest.max_invoice_key IS NOT NULL
+                AND (c.fecha_emision::text || '|' || c.numero_factura) = latest.max_invoice_key
+            LEFT JOIN sisclin.pagos_seguros ps ON c.numero_factura = ps.numero_factura
+            WHERE a.numero_documento IN ({$admissionNumbersQuoted})
+                AND a.total >= 0
+                AND p.nombre_paciente != ''
+                AND p.nombre_paciente != 'No existe...'
+                AND as2.nombre_aseguradora NOT IN ('PARTICULAR', 'PACIENTES PARTICULARES')
         ";
 
         $results = DB::connection('external_db')->select($sql);
 
-        // 3. Convertir a array y agregar datos de admissions_lists
         $admissions = [];
         foreach ($results as $item) {
             $admission = (array) $item;
 
-            // Agregar biller desde admissions_lists
             if (isset($listsArray[$admission['number']])) {
                 $admission['biller'] = $listsArray[$admission['number']]['biller'];
                 $admission['period'] = $listsArray[$admission['number']]['period'];

@@ -13,9 +13,9 @@ class CustomQueryController extends Controller
     {
         $this->middleware('compress')->only(['executeQuery', 'getAdmissionsByDateRange']);
     }
+
     public function executeQuery(Request $request)
     {
-        // validar si query existe y es valido
         $query = $request->input('query');
 
         if (empty($query)) {
@@ -25,7 +25,7 @@ class CustomQueryController extends Controller
         if (!preg_match('/^\s*(SELECT|INSERT|UPDATE|DELETE)\s+/i', $query)) {
             return ApiResponseClass::sendResponse([], 'Invalid query.', 400);
         }
-        $query = $request->input('query');
+
         try {
             $results = DB::connection('external_db')->select($query);
 
@@ -38,11 +38,9 @@ class CustomQueryController extends Controller
 
     public function getAdmissionsByDateRange(Request $request)
     {
-        // Obtener las fechas del request
-        $startDate = $request->input('start_date'); // Ejemplo: '2025-01-01'
-        $endDate = $request->input('end_date');     // Ejemplo: '2025-01-14'
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
 
-        // Validar que las fechas existan
         if (empty($startDate) || empty($endDate)) {
             return response()->json(['error' => 'Start date and end date are required'], 400);
         }
@@ -50,41 +48,44 @@ class CustomQueryController extends Controller
         $results = [];
         try {
             DB::connection('external_db')
-                ->table('SC0011')
-                ->leftJoin('SC0006', 'SC0011.cod_ser', '=', 'SC0006.cod_ser')
-                ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-                ->leftJoin('SC0003', 'SC0011.cod_emp', '=', 'SC0003.cod_emp')
-                ->leftJoin('SC0004', 'SC0011.cod_pac', '=', 'SC0004.cod_pac')
-                ->leftJoin('SC0033', 'SC0011.num_doc', '=', 'SC0033.num_doc')
-                ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-                ->leftJoin('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
+                ->table('sisclin.atenciones as a')
+                ->leftJoin('sisclin.servicios_medicos as sm', 'a.servicio_medico_id', '=', 'sm.id')
+                ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
+                ->leftJoin('sisclin.empresas as e', 'a.empresa_id', '=', 'e.id')
+                ->leftJoin('sisclin.pacientes as p', 'a.paciente_id', '=', 'p.id')
+                ->leftJoin('sisclin.devoluciones as d', function ($join) {
+                    $join->on('d.comprobante_id', '=', DB::raw(
+                        '(SELECT id FROM sisclin.comprobantes WHERE atencion_id = a.id LIMIT 1)'
+                    ));
+                })
+                ->leftJoin('sisclin.comprobantes as c', 'a.id', '=', 'c.atencion_id')
+                ->leftJoin('sisclin.pagos_seguros as ps', 'c.numero_factura', '=', 'ps.numero_factura')
                 ->select(
-                    'SC0011.num_doc AS number',
-                    'SC0011.fec_doc AS attendance_date',
-                    'SC0011.nom_pac AS patient',
-                    'SC0011.hi_doc AS attendance_hour',
-                    'SC0011.ta_doc AS type',
-                    'SC0011.tot_doc AS amount',
-                    'SC0003.nom_emp AS company',
-                    'SC0006.nom_ser AS doctor',
-                    'SC0004.nh_pac AS medical_record_number',
-                    'SC0011.clos_doc AS is_closed',
-                    'SC0017.num_fac AS invoice_number',
-                    'SC0017.fec_fac AS invoice_date',
-                    'SC0017.uc_sis AS biller',
-                    'SC0033.fh_dev AS devolution_date',
-                    'SC0002.nom_cia AS insurer_name',
-                    'SC0022.num_fac AS paid_invoice_number'
+                    'a.numero_documento AS number',
+                    'a.fecha_hora_atencion AS attendance_date',
+                    'p.nombre_paciente AS patient',
+                    'a.fecha_hora_atencion AS attendance_hour',
+                    'a.tipo_atencion AS type',
+                    'a.total AS amount',
+                    'e.nombre_empresa AS company',
+                    'sm.nombre_medico AS doctor',
+                    'p.numero_historia AS medical_record_number',
+                    'a.atencion_cerrada AS is_closed',
+                    'c.numero_factura AS invoice_number',
+                    'c.fecha_emision AS invoice_date',
+                    'c.usuario_creacion AS biller',
+                    'd.fecha_devolucion AS devolution_date',
+                    'as2.nombre_aseguradora AS insurer_name',
+                    'ps.numero_factura AS paid_invoice_number'
                 )
-                ->whereBetween('SC0011.fec_doc', [$startDate, $endDate]) // Rango de fechas
-                ->where('SC0011.tot_doc', '>=', 0)
-                ->where('SC0011.nom_pac', '<>', '')
-                ->where('SC0011.nom_pac', '<>', 'No existe...')
-                ->where('SC0002.nom_cia', '<>', 'PARTICULAR')
-                ->where('SC0002.nom_cia', '<>', 'PACIENTES PARTICULARES')
-                ->orderByDesc('SC0011.num_doc')
+                ->whereBetween('a.fecha_hora_atencion', [$startDate, $endDate])
+                ->where('a.total', '>=', 0)
+                ->where('p.nombre_paciente', '<>', '')
+                ->where('p.nombre_paciente', '<>', 'No existe...')
+                ->where('as2.nombre_aseguradora', '<>', 'PARTICULAR')
+                ->where('as2.nombre_aseguradora', '<>', 'PACIENTES PARTICULARES')
+                ->orderByDesc('a.numero_documento')
                 ->chunk(500, function ($chunk) use (&$results) {
-                    // Agrega el chunk procesado al arreglo de resultados
                     foreach ($chunk as $record) {
                         $results[] = $record;
                     }

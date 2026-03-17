@@ -5,298 +5,245 @@ namespace App\Repositories;
 use Illuminate\Support\Facades\DB;
 
 /**
- * Repositorio para cálculo de agregaciones directamente en MySQL
- * Optimizado para evitar transferir datos innecesarios a PHP
+ * Repositorio para cálculo de agregaciones en PostgreSQL (schema sisclin).
+ * Factura válida = serie 003 o 004 (política de facturación a aseguradoras).
  */
 class DashboardAggregationRepository
 {
     /**
      * Calcular todas las agregaciones para análisis de rango de fechas
-     * OPTIMIZACIÓN: Todo se calcula en MySQL, no en PHP
-     *
-     * @param string $startDate Fecha inicio (Y-m-d)
-     * @param string $endDate Fecha fin (Y-m-d)
-     * @return array Agregaciones calculadas
      */
     public function getDateRangeAggregations(string $startDate, string $endDate): array
     {
-        // Filtros base que se reutilizan
         $baseWhere = function ($query) use ($startDate, $endDate) {
             return $query
-                ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
-                ->where('SC0011.tot_doc', '>=', 0)
-                ->where('SC0011.nom_pac', '!=', '')
-                ->where('SC0011.nom_pac', '!=', 'No existe...');
+                ->whereBetween('a.fecha_hora_atencion', [$startDate, $endDate])
+                ->where('a.total', '>=', 0)
+                ->whereExists(function ($q) {
+                    $q->selectRaw('1')
+                        ->from('sisclin.pacientes as p2')
+                        ->whereColumn('p2.id', 'a.paciente_id')
+                        ->where('p2.nombre_paciente', '!=', '')
+                        ->where('p2.nombre_paciente', '!=', 'No existe...');
+                });
         };
 
-        // 1. Estado de facturación por mes (cantidad y monto)
-        // NUEVO: Incluye 3 estados - Facturado, Pagado, Pendiente
+        // 1. Estado de facturación por mes
         $invoiceByMonth = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0017', 'SC0011.num_doc', '=', 'SC0017.num_doc')
-            ->leftJoin('SC0022', 'SC0017.num_doc', '=', 'SC0022.num_doc')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
+            ->leftJoin('sisclin.comprobantes as c', function ($join) {
+                $join->on('a.id', '=', 'c.atencion_id')
+                    ->where(function ($q) {
+                        $q->where('c.numero_factura', 'LIKE', '003-%')
+                          ->orWhere('c.numero_factura', 'LIKE', '004-%');
+                    });
+            })
+            ->leftJoin('sisclin.pagos_seguros as ps', 'c.numero_factura', '=', 'ps.numero_factura')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                MONTH(SC0011.fec_doc) as month,
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw("
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
 
-                -- Pendiente: Sin facturar o con factura temporal
                 COUNT(DISTINCT CASE
-                    WHEN SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE "005-%"
-                        OR SC0017.num_fac LIKE "006-%"
-                        OR SC0017.num_fac LIKE "009-%"
-                    THEN SC0011.num_doc
-                END) as pending_count,
+                    WHEN c.numero_factura IS NULL THEN a.id
+                END) AS pending_count,
 
-                -- Facturado: Con factura válida (incluye pagadas y no pagadas)
                 COUNT(DISTINCT CASE
-                    WHEN SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                        AND SC0017.num_fac NOT LIKE "009-%"
-                    THEN SC0011.num_doc
-                END) as invoiced_count,
+                    WHEN c.numero_factura IS NOT NULL THEN a.id
+                END) AS invoiced_count,
 
-                -- Pagado: Facturado Y registrado en SC0022
                 COUNT(DISTINCT CASE
-                    WHEN SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                        AND SC0017.num_fac NOT LIKE "009-%"
-                        AND SC0022.num_doc IS NOT NULL
-                    THEN SC0011.num_doc
-                END) as paid_count,
+                    WHEN c.numero_factura IS NOT NULL AND ps.numero_factura IS NOT NULL THEN a.id
+                END) AS paid_count,
 
-                -- Montos
-                SUM(CASE
-                    WHEN SC0017.num_fac IS NULL
-                        OR SC0017.num_fac LIKE "005-%"
-                        OR SC0017.num_fac LIKE "006-%"
-                        OR SC0017.num_fac LIKE "009-%"
-                    THEN SC0011.tot_doc ELSE 0
-                END) as pending_amount,
-
-                SUM(CASE
-                    WHEN SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                        AND SC0017.num_fac NOT LIKE "009-%"
-                    THEN SC0011.tot_doc ELSE 0
-                END) as invoiced_amount,
-
-                SUM(CASE
-                    WHEN SC0017.num_fac IS NOT NULL
-                        AND SC0017.num_fac NOT LIKE "005-%"
-                        AND SC0017.num_fac NOT LIKE "006-%"
-                        AND SC0017.num_fac NOT LIKE "009-%"
-                        AND SC0022.num_doc IS NOT NULL
-                    THEN SC0011.tot_doc ELSE 0
-                END) as paid_amount
-            ')
-            ->groupBy(DB::raw('MONTH(SC0011.fec_doc)'))
+                SUM(CASE WHEN c.numero_factura IS NULL THEN a.total ELSE 0 END) AS pending_amount,
+                SUM(CASE WHEN c.numero_factura IS NOT NULL THEN a.total ELSE 0 END) AS invoiced_amount,
+                SUM(CASE WHEN c.numero_factura IS NOT NULL AND ps.numero_factura IS NOT NULL THEN a.total ELSE 0 END) AS paid_amount
+            ")
+            ->groupByRaw('EXTRACT(MONTH FROM a.fecha_hora_atencion)')
             ->orderBy('month')
             ->get();
 
-        // 2. Aseguradoras por mes (cantidad y monto)
+        // 2. Aseguradoras por mes
         $insurersByMonth = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                SC0002.nom_cia as insurer_name,
-                MONTH(SC0011.fec_doc) as month,
-                COUNT(*) as count,
-                SUM(SC0011.tot_doc) as amount
-            ')
-            ->groupBy('SC0002.nom_cia', DB::raw('MONTH(SC0011.fec_doc)'))
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw("
+                as2.nombre_aseguradora AS insurer_name,
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                COUNT(*) AS count,
+                SUM(a.total) AS amount
+            ")
+            ->groupByRaw("as2.nombre_aseguradora, EXTRACT(MONTH FROM a.fecha_hora_atencion)")
             ->orderBy('month')
             ->orderByDesc('count')
             ->get();
 
-        // 3. Estado de pagos (todas las admisiones)
-        // OPTIMIZACIÓN: Calculado directamente desde invoice_by_month para evitar
-        // queries pesadas con múltiples JOINs que causan "MySQL server has gone away"
-        // Los datos de paid/pending ya están calculados por mes en $invoiceByMonth,
-        // solo necesitamos sumarlos para obtener el total del periodo
-        $paymentStatus = (object)[
-            'paid_count' => $invoiceByMonth->sum('paid_count'),
-            'paid_amount' => $invoiceByMonth->sum('paid_amount'),
-            'pending_count' => $invoiceByMonth->sum('pending_count'),
+        // 3. Estado de pagos totales del periodo
+        $paymentStatus = (object) [
+            'paid_count'     => $invoiceByMonth->sum('paid_count'),
+            'paid_amount'    => $invoiceByMonth->sum('paid_amount'),
+            'pending_count'  => $invoiceByMonth->sum('pending_count'),
             'pending_amount' => $invoiceByMonth->sum('pending_amount'),
         ];
 
         // 4. Análisis por tipo de atención
         $attendanceType = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                UPPER(TRIM(SC0011.ta_doc)) as type,
-                COUNT(*) as count,
-                SUM(SC0011.tot_doc) as amount,
-                AVG(SC0011.tot_doc) as average
-            ')
-            ->groupBy(DB::raw('UPPER(TRIM(SC0011.ta_doc))'))
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw("
+                UPPER(TRIM(a.tipo_atencion)) AS type,
+                COUNT(*) AS count,
+                SUM(a.total) AS amount,
+                AVG(a.total) AS average
+            ")
+            ->groupByRaw('UPPER(TRIM(a.tipo_atencion))')
             ->orderByDesc('count')
             ->get();
 
         // 5. Pacientes únicos y total de admisiones
         $summary = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
             ->selectRaw('
-                COUNT(DISTINCT SC0011.cod_pac) as unique_patients,
-                COUNT(*) as total_admissions
+                COUNT(DISTINCT a.paciente_id) AS unique_patients,
+                COUNT(*) AS total_admissions
             ')
             ->first();
 
-        // 6. Top 10 empresas por cantidad y monto
+        // 6. Top 10 empresas por cantidad
         $topCompaniesByCount = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0003', 'SC0011.cod_emp', '=', 'SC0003.cod_emp')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.empresas as e', 'a.empresa_id', '=', 'e.id')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotNull('SC0003.nom_emp')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                SC0003.nom_emp as company,
-                COUNT(*) as count,
-                SUM(SC0011.tot_doc) as amount
-            ')
-            ->groupBy('SC0003.nom_emp')
+            ->whereNotNull('e.nombre_empresa')
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw('e.nombre_empresa AS company, COUNT(*) AS count, SUM(a.total) AS amount')
+            ->groupBy('e.nombre_empresa')
             ->orderByDesc('count')
             ->limit(10)
             ->get();
 
+        // 7. Top 10 empresas por monto
         $topCompaniesByAmount = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0003', 'SC0011.cod_emp', '=', 'SC0003.cod_emp')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.empresas as e', 'a.empresa_id', '=', 'e.id')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotNull('SC0003.nom_emp')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                SC0003.nom_emp as company,
-                COUNT(*) as count,
-                SUM(SC0011.tot_doc) as amount
-            ')
-            ->groupBy('SC0003.nom_emp')
+            ->whereNotNull('e.nombre_empresa')
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw('e.nombre_empresa AS company, COUNT(*) AS count, SUM(a.total) AS amount')
+            ->groupBy('e.nombre_empresa')
             ->orderByDesc('amount')
             ->limit(10)
             ->get();
 
-        // 7. Estadísticas mensuales (pacientes únicos, atenciones totales, monto total por mes)
-        // Optimizado: Todo calculado directamente en MySQL
-        // Solo métricas de pacientes y atenciones (sin facturación)
+        // 8. Estadísticas mensuales
         $monthlyStatistics = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                MONTH(SC0011.fec_doc) as month,
-                COUNT(DISTINCT SC0011.cod_pac) as unique_patients,
-                COUNT(*) as total_admissions,
-                SUM(SC0011.tot_doc) as total_amount
-            ')
-            ->groupBy(DB::raw('MONTH(SC0011.fec_doc)'))
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw("
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                COUNT(DISTINCT a.paciente_id) AS unique_patients,
+                COUNT(*) AS total_admissions,
+                SUM(a.total) AS total_amount
+            ")
+            ->groupByRaw('EXTRACT(MONTH FROM a.fecha_hora_atencion)')
             ->orderBy('month')
             ->get();
 
-        // 8. Desglose por tipo de atención por mes
-        // Para cada mes: cantidad, monto, promedio y porcentaje por tipo de atención
+        // 9. Desglose por tipo de atención por mes
         $attendanceTypeByMonth = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
             ->where($baseWhere)
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->selectRaw('
-                MONTH(SC0011.fec_doc) as month,
-                UPPER(TRIM(SC0011.ta_doc)) as type,
-                COUNT(*) as count,
-                COUNT(DISTINCT SC0011.cod_pac) as unique_patients,
-                SUM(SC0011.tot_doc) as amount,
-                AVG(SC0011.tot_doc) as average
-            ')
-            ->groupBy(DB::raw('MONTH(SC0011.fec_doc)'), DB::raw('UPPER(TRIM(SC0011.ta_doc))'))
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->selectRaw("
+                EXTRACT(MONTH FROM a.fecha_hora_atencion) AS month,
+                UPPER(TRIM(a.tipo_atencion)) AS type,
+                COUNT(*) AS count,
+                COUNT(DISTINCT a.paciente_id) AS unique_patients,
+                SUM(a.total) AS amount,
+                AVG(a.total) AS average
+            ")
+            ->groupByRaw("EXTRACT(MONTH FROM a.fecha_hora_atencion), UPPER(TRIM(a.tipo_atencion))")
             ->orderBy('month')
             ->orderByDesc('count')
             ->get();
 
         return [
-            'invoice_by_month' => $invoiceByMonth,
-            'insurers_by_month' => $insurersByMonth,
-            'payment_status' => $paymentStatus,
-            'attendance_type' => $attendanceType,
-            'unique_patients' => $summary->unique_patients,
-            'total_admissions' => $summary->total_admissions,
-            'top_companies_by_count' => $topCompaniesByCount,
-            'top_companies_by_amount' => $topCompaniesByAmount,
-            'monthly_statistics' => $monthlyStatistics,
+            'invoice_by_month'         => $invoiceByMonth,
+            'insurers_by_month'        => $insurersByMonth,
+            'payment_status'           => $paymentStatus,
+            'attendance_type'          => $attendanceType,
+            'unique_patients'          => $summary->unique_patients,
+            'total_admissions'         => $summary->total_admissions,
+            'top_companies_by_count'   => $topCompaniesByCount,
+            'top_companies_by_amount'  => $topCompaniesByAmount,
+            'monthly_statistics'       => $monthlyStatistics,
             'attendance_type_by_month' => $attendanceTypeByMonth,
         ];
     }
 
     /**
-     * Calcular agregaciones para análisis de periodo (con auditores y facturadores)
-     *
-     * @param string $startDate
-     * @param string $endDate
-     * @param string $period Formato YYYYMM
-     * @return array
+     * Calcular agregaciones para análisis de periodo
      */
     public function getPeriodAggregations(string $startDate, string $endDate, string $period): array
     {
-        // Obtener números de admisión del periodo para cruzar con tablas de aplicación
         $admissionNumbers = DB::connection('external_db')
-            ->table('SC0011')
-            ->leftJoin('SC0002', DB::raw('LEFT(SC0011.cod_emp, 2)'), '=', 'SC0002.cod_cia')
-            ->whereBetween('SC0011.fec_doc', [$startDate, $endDate])
-            ->where('SC0011.tot_doc', '>=', 0)
-            ->where('SC0011.nom_pac', '!=', '')
-            ->where('SC0011.nom_pac', '!=', 'No existe...')
-            ->whereNotIn('SC0002.nom_cia', ['PARTICULAR', 'PACIENTES PARTICULARES'])
-            ->pluck('SC0011.num_doc')
+            ->table('sisclin.atenciones as a')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
+            ->whereBetween('a.fecha_hora_atencion', [$startDate, $endDate])
+            ->where('a.total', '>=', 0)
+            ->whereExists(function ($q) {
+                $q->selectRaw('1')
+                    ->from('sisclin.pacientes as p2')
+                    ->whereColumn('p2.id', 'a.paciente_id')
+                    ->where('p2.nombre_paciente', '!=', '')
+                    ->where('p2.nombre_paciente', '!=', 'No existe...');
+            })
+            ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
+            ->pluck('a.numero_documento')
             ->toArray();
 
         if (empty($admissionNumbers)) {
             return [
-                'auditors_list' => [],
+                'auditors_list'        => [],
                 'auditors_performance' => [],
-                'billers_list' => [],
-                'billers_performance' => [],
+                'billers_list'         => [],
+                'billers_performance'  => [],
             ];
         }
 
-        // Auditores: Obtener de tabla audits
         $auditorsData = DB::table('audits')
             ->whereIn('admission_number', $admissionNumbers)
-            ->selectRaw('auditor')
             ->groupBy('auditor')
             ->orderBy('auditor')
             ->pluck('auditor')
             ->toArray();
 
-        // Facturadores: Obtener de admissions_lists
         $billersData = DB::table('admissions_lists')
             ->where('period', $period)
             ->whereIn('admission_number', $admissionNumbers)
-            ->selectRaw('biller')
             ->groupBy('biller')
             ->orderBy('biller')
             ->pluck('biller')
             ->toArray();
 
         return [
-            'auditors_list' => $auditorsData,
-            'billers_list' => $billersData,
-            'admission_numbers' => $admissionNumbers, // Para procesar rendimiento después
+            'auditors_list'    => $auditorsData,
+            'billers_list'     => $billersData,
+            'admission_numbers' => $admissionNumbers,
         ];
     }
 }
