@@ -222,7 +222,11 @@ class CustomQueryController extends Controller
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
                         WHERE ps2.numero_factura = c.numero_factura
-                    ) AS paid_admission')
+                    ) AS paid_admission'),
+                    DB::raw('EXISTS (
+                        SELECT 1 FROM sisclin.pagos_seguros ps2
+                        WHERE ps2.numero_documento = d.numero_documento
+                    ) AS is_paid')
                 )
                 ->whereBetween('a.fecha_hora_atencion', [$startDate, $endDate])
                 ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
