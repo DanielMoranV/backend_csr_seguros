@@ -182,6 +182,7 @@ Route::group([
     'prefix' => 'migration'
 ], function () {
     Route::post('/atenciones', [MigrationController::class, 'migrateAtenciones'])->name('migration.atenciones');
+    Route::post('/devoluciones', [MigrationController::class, 'migrateDevoluciones'])->name('migration.devoluciones');
     Route::get('/status/{jobId}', [MigrationController::class, 'getStatus'])->name('migration.status');
 });
 

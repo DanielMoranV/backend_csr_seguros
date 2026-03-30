@@ -62,6 +62,49 @@ class MigrationController extends Controller
     }
 
     /**
+     * Lanza migración de devoluciones por rango de fechas.
+     * POST /api/migration/by-date/devoluciones
+     *
+     * Body: { start_date, end_date, include_dependencies?, dry_run? }
+     */
+    public function migrateDevoluciones(Request $request)
+    {
+        $request->validate([
+            'start_date'           => 'required|date_format:Y-m-d',
+            'end_date'             => 'required|date_format:Y-m-d|after_or_equal:start_date',
+            'include_dependencies' => 'boolean',
+            'dry_run'              => 'boolean',
+        ]);
+
+        $payload = [
+            'start_date'           => $request->input('start_date'),
+            'end_date'             => $request->input('end_date'),
+            'include_dependencies' => $request->input('include_dependencies', true),
+            'dry_run'              => $request->input('dry_run', false),
+        ];
+
+        try {
+            $response = Http::timeout(30)
+                ->withHeaders(['x-api-key' => $this->apiKey])
+                ->post("{$this->baseUrl}/migration/by-date/devoluciones", $payload);
+
+            if ($response->failed()) {
+                Log::error('Migration API error (devoluciones): ' . $response->body());
+                return ApiResponseClass::sendResponse(
+                    $response->json() ?? [],
+                    'Error al iniciar migración de devoluciones: ' . $response->body(),
+                    $response->status()
+                );
+            }
+
+            return ApiResponseClass::sendResponse($response->json(), 'Migración de devoluciones iniciada correctamente.', 200);
+        } catch (\Exception $e) {
+            Log::error('Error conectando con Migration API (devoluciones): ' . $e->getMessage());
+            return ApiResponseClass::sendResponse([], 'No se pudo conectar con el servicio de migración.', 500);
+        }
+    }
+
+    /**
      * Lanza migración selectiva de admisiones por números.
      * POST /api/v1/custom-migrations/admissions
      *
