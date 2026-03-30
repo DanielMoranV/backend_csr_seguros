@@ -62,6 +62,46 @@ class MigrationController extends Controller
     }
 
     /**
+     * Lanza migración selectiva de admisiones por números.
+     * POST /api/v1/custom-migrations/admissions
+     *
+     * Body: { admission_numbers, dry_run? }
+     */
+    public function migrateAdmissions(Request $request)
+    {
+        $request->validate([
+            'admission_numbers' => 'required|array|min:1',
+            'admission_numbers.*' => 'string',
+            'dry_run' => 'boolean',
+        ]);
+
+        $payload = [
+            'admission_numbers' => $request->input('admission_numbers'),
+            'dry_run' => $request->input('dry_run', false),
+        ];
+
+        try {
+            $response = Http::timeout(60)
+                ->withHeaders(['x-api-key' => $this->apiKey])
+                ->post("{$this->baseUrl}/custom-migrations/admissions", $payload);
+
+            if ($response->failed()) {
+                Log::error('Selective Migration API error: ' . $response->body());
+                return ApiResponseClass::sendResponse(
+                    $response->json() ?? [],
+                    'Error al iniciar migración selectiva: ' . $response->body(),
+                    $response->status()
+                );
+            }
+
+            return ApiResponseClass::sendResponse($response->json(), 'Migración selectiva iniciada correctamente.', 200);
+        } catch (\Exception $e) {
+            Log::error('Error conectando con Migration API (Selective): ' . $e->getMessage());
+            return ApiResponseClass::sendResponse([], 'No se pudo conectar con el servicio de migración.', 500);
+        }
+    }
+
+    /**
      * Consulta el estado de un job de migración.
      * GET /api/migration/status/{jobId}
      */

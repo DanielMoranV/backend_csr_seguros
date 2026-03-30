@@ -185,6 +185,14 @@ Route::group([
     Route::get('/status/{jobId}', [MigrationController::class, 'getStatus'])->name('migration.status');
 });
 
+// Selective Migration Routes (New Endpoint)
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'v1/custom-migrations'
+], function () {
+    Route::post('/admissions', [MigrationController::class, 'migrateAdmissions'])->name('migration.selective');
+});
+
 // Dashboard Routes - Reportes y Estadísticas
 Route::group([
     'middleware' => ['auth:api', 'role:dev|admin'],
