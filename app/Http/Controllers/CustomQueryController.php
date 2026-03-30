@@ -216,7 +216,7 @@ class CustomQueryController extends Controller
                     'sm.nombre_servicio AS doctor',
                     'd.estado_devolucion AS type',
                     'd.motivo AS reason',
-                    'd.usuario_creacion AS biller',
+                    'c.usuario_creacion AS biller',
                     'last_invoice_data.date_last_invoice',
                     'last_invoice_data.last_invoice',
                     DB::raw('EXISTS (
