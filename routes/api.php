@@ -16,6 +16,7 @@ use App\Http\Controllers\CustomQueryController;
 use App\Http\Controllers\MedicalRecordRequestController;
 use App\Http\Controllers\ShipmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MigrationController;
 
 // Health Check
 Route::get('/health', [HealthController::class, 'check']);
@@ -171,6 +172,26 @@ Route::apiResource('shipments', ShipmentController::class)->middleware('role:dev
 
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
 Route::post('admissions_by_date_range', [CustomQueryController::class, 'getAdmissionsByDateRange'])->name('getAdmissionsByDateRange');
+Route::post('patients_by_medical_record_numbers', [CustomQueryController::class, 'getByMedicalRecordNumbers'])->name('getByMedicalRecordNumbers');
+Route::post('devolutions_by_invoice_numbers', [CustomQueryController::class, 'getDevolutionsByInvoiceNumbers'])->name('getDevolutionsByInvoiceNumbers');
+Route::post('devolutions_by_date_range', [CustomQueryController::class, 'getDevolutionsByDateRange'])->name('getDevolutionsByDateRange');
+
+// Migration Routes
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'migration'
+], function () {
+    Route::post('/atenciones', [MigrationController::class, 'migrateAtenciones'])->name('migration.atenciones');
+    Route::get('/status/{jobId}', [MigrationController::class, 'getStatus'])->name('migration.status');
+});
+
+// Selective Migration Routes (New Endpoint)
+Route::group([
+    'middleware' => ['auth:api', 'role:dev|admin'],
+    'prefix' => 'v1/custom-migrations'
+], function () {
+    Route::post('/admissions', [MigrationController::class, 'migrateAdmissions'])->name('migration.selective');
+});
 
 // Dashboard Routes - Reportes y Estadísticas
 Route::group([
