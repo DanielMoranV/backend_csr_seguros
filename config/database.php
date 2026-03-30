@@ -32,22 +32,17 @@ return [
     'connections' => [
 
         'external_db' => [
-            'driver' => 'mysql',
+            'driver' => 'pgsql',
             'host' => env('DB_EXTERNAL_HOST', '127.0.0.1'),
-            'port' => env('DB_EXTERNAL_PORT', '3306'),
-            'database' => env('DB_EXTERNAL_DATABASE', 'db_sisclin'),
-            'username' => env('DB_EXTERNAL_USERNAME', 'root'),
+            'port' => env('DB_EXTERNAL_PORT', '5433'),
+            'database' => env('DB_EXTERNAL_DATABASE', 'backend_csr'),
+            'username' => env('DB_EXTERNAL_USERNAME', 'csr_user'),
             'password' => env('DB_EXTERNAL_PASSWORD', ''),
-            'unix_socket' => env('DB_EXTERNAL_SOCKET', ''),
-            'charset' => 'utf8mb4',
-            'collation' => 'utf8mb4_unicode_ci',
+            'charset' => 'utf8',
             'prefix' => '',
-            'strict' => true,
-            'engine' => null,
-            'options' => [
-                PDO::ATTR_TIMEOUT => 300000,
-                PDO::ATTR_PERSISTENT => true, // Cambia el valor según el tiempo deseado (en segundos)
-            ],
+            'prefix_indexes' => true,
+            'search_path' => env('DB_EXTERNAL_SCHEMA', 'sisclin'),
+            'sslmode' => env('DB_EXTERNAL_SSLMODE', 'disable'),
         ],
 
         'sqlite' => [
