@@ -173,6 +173,7 @@ Route::apiResource('shipments', ShipmentController::class)->middleware('role:dev
 Route::post('excequte_query', [CustomQueryController::class, 'executeQuery'])->name('executeQuery');
 Route::post('admissions_by_date_range', [CustomQueryController::class, 'getAdmissionsByDateRange'])->name('getAdmissionsByDateRange');
 Route::post('patients_by_medical_record_numbers', [CustomQueryController::class, 'getByMedicalRecordNumbers'])->name('getByMedicalRecordNumbers');
+Route::get('patients/search', [CustomQueryController::class, 'searchPatients'])->name('searchPatients');
 Route::post('devolutions_by_invoice_numbers', [CustomQueryController::class, 'getDevolutionsByInvoiceNumbers'])->name('getDevolutionsByInvoiceNumbers');
 Route::post('devolutions_by_date_range', [CustomQueryController::class, 'getDevolutionsByDateRange'])->name('getDevolutionsByDateRange');
 

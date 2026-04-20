@@ -5,13 +5,71 @@ namespace App\Http\Controllers;
 use App\Classes\ApiResponseClass;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class CustomQueryController extends Controller
 {
+    protected string $migrationBaseUrl;
+    protected string $migrationApiKey;
+
     public function __construct()
     {
-        $this->middleware('compress')->only(['executeQuery', 'getAdmissionsByDateRange', 'getByMedicalRecordNumbers', 'getDevolutionsByInvoiceNumbers', 'getDevolutionsByDateRange']);
+        $this->middleware('compress')->only(['executeQuery', 'getAdmissionsByDateRange', 'getByMedicalRecordNumbers', 'getDevolutionsByInvoiceNumbers', 'getDevolutionsByDateRange', 'searchPatients']);
+        $this->migrationBaseUrl = rtrim(env('MIGRATION_API_URL', 'http://localhost:8081/api/v1'), '/');
+        $this->migrationApiKey  = env('MIGRATION_API_KEY', '');
+    }
+
+    /**
+     * Llama al servicio de migración por número de admisión (document_number).
+     * Retorna true si la migración fue exitosa (status === 'completed').
+     */
+    private function migrateByDocumentNumber(string $documentNumber): bool
+    {
+        try {
+            $response = Http::timeout(60)
+                ->withHeaders(['x-api-key' => $this->migrationApiKey])
+                ->post("{$this->migrationBaseUrl}/custom-migrations/admissions", [
+                    'admission_numbers' => [$documentNumber],
+                    'dry_run'           => false,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning("Migration by document_number [{$documentNumber}] failed: " . $response->body());
+                return false;
+            }
+
+            return ($response->json('status') === 'completed');
+        } catch (\Exception $e) {
+            Log::warning("Migration by document_number [{$documentNumber}] exception: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Llama al servicio de migración por número de historia clínica.
+     * Retorna true si la migración fue exitosa (status === 'completed').
+     */
+    private function migrateByHistoria(string $medicalRecordNumber): bool
+    {
+        try {
+            $response = Http::timeout(60)
+                ->withHeaders(['x-api-key' => $this->migrationApiKey])
+                ->post("{$this->migrationBaseUrl}/custom-migrations/by-historia", [
+                    'historia_numbers' => [$medicalRecordNumber],
+                    'dry_run'          => false,
+                ]);
+
+            if ($response->failed()) {
+                Log::warning("Migration by historia [{$medicalRecordNumber}] failed: " . $response->body());
+                return false;
+            }
+
+            return ($response->json('status') === 'completed');
+        } catch (\Exception $e) {
+            Log::warning("Migration by historia [{$medicalRecordNumber}] exception: " . $e->getMessage());
+            return false;
+        }
     }
 
     public function executeQuery(Request $request)
@@ -238,6 +296,121 @@ class CustomQueryController extends Controller
             Log::error('Error en getDevolutionsByDateRange: ' . $e->getMessage());
             return ApiResponseClass::sendResponse([], 'Error executing query: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Búsqueda de pacientes por número de historia, nombre o número de documento de atención.
+     *
+     * Parámetros (mutuamente excluyentes, en orden de prioridad):
+     *   - medical_record_number : string  → búsqueda exacta; si no hay resultado, migra por historia y reintenta
+     *   - name                  : string  → búsqueda parcial case-insensitive (mín. 3 chars, máx. 50 resultados)
+     *   - document_number       : string  → busca en atenciones.numero_documento; si no hay resultado,
+     *                                       migra por admisión y reintenta. La aseguradora viene de la atención.
+     */
+    public function searchPatients(Request $request)
+    {
+        $medicalRecord  = trim($request->input('medical_record_number', ''));
+        $name           = trim($request->input('name', ''));
+        $documentNumber = trim($request->input('document_number', ''));
+
+        if (empty($medicalRecord) && empty($name) && empty($documentNumber)) {
+            return ApiResponseClass::sendResponse(
+                [],
+                'Se requiere al menos uno de: medical_record_number, name, document_number.',
+                400
+            );
+        }
+
+        try {
+            if (!empty($documentNumber)) {
+                // Normalizar a 10 dígitos con ceros a la izquierda (formato de atenciones.numero_documento)
+                $normalizedDoc = str_pad((string) intval($documentNumber), 10, '0', STR_PAD_LEFT);
+                $results = $this->queryByDocumentNumber($normalizedDoc);
+
+                if ($results->isEmpty()) {
+                    $migrated = $this->migrateByDocumentNumber($normalizedDoc);
+                    if ($migrated) {
+                        $results = $this->queryByDocumentNumber($normalizedDoc);
+                    }
+                }
+
+                return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
+            }
+
+            if (!empty($medicalRecord)) {
+                $normalized = str_pad((string) intval($medicalRecord), 9, '0', STR_PAD_LEFT);
+                $results    = $this->queryByMedicalRecord($normalized);
+
+                if ($results->isEmpty()) {
+                    $migrated = $this->migrateByHistoria($normalized);
+                    if ($migrated) {
+                        $results = $this->queryByMedicalRecord($normalized);
+                    }
+                }
+
+                return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
+            }
+
+            // Búsqueda por nombre: sin migración automática
+            if (mb_strlen($name) < 3) {
+                return ApiResponseClass::sendResponse(
+                    [],
+                    'El nombre debe tener al menos 3 caracteres.',
+                    400
+                );
+            }
+
+            $results = DB::connection('external_db')
+                ->table('sisclin.pacientes as p')
+                ->leftJoin('sisclin.aseguradoras as as2', 'p.aseguradora_id', '=', 'as2.id')
+                ->select(
+                    'p.numero_historia AS medical_record_number',
+                    'p.nombre_paciente AS patient',
+                    'as2.nombre_aseguradora AS insurer_name'
+                )
+                ->whereRaw('UPPER(p.nombre_paciente) LIKE UPPER(?)', ['%' . $name . '%'])
+                ->orderBy('p.nombre_paciente')
+                ->limit(50)
+                ->get();
+
+            return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
+        } catch (\Exception $e) {
+            Log::error('Error en searchPatients: ' . $e->getMessage());
+            return ApiResponseClass::sendResponse([], 'Error executing query: ' . $e->getMessage(), 500);
+        }
+    }
+
+    private function queryByDocumentNumber(string $documentNumber)
+    {
+        return DB::connection('external_db')
+            ->table('sisclin.atenciones as a')
+            ->join('sisclin.pacientes as p', 'a.paciente_id', '=', 'p.id')
+            ->leftJoin('sisclin.aseguradoras as as2', 'a.aseguradora_id', '=', 'as2.id')
+            ->select(
+                'p.numero_historia AS medical_record_number',
+                'p.nombre_paciente AS patient',
+                'as2.nombre_aseguradora AS insurer_name',
+                'a.numero_documento AS document_number',
+                'a.fecha_hora_atencion AS attendance_date',
+                'a.tipo_atencion AS type'
+            )
+            ->where('a.numero_documento', $documentNumber)
+            ->orderByDesc('a.fecha_hora_atencion')
+            ->get();
+    }
+
+    private function queryByMedicalRecord(string $normalizedNumber)
+    {
+        return DB::connection('external_db')
+            ->table('sisclin.pacientes as p')
+            ->leftJoin('sisclin.aseguradoras as as2', 'p.aseguradora_id', '=', 'as2.id')
+            ->select(
+                'p.numero_historia AS medical_record_number',
+                'p.nombre_paciente AS patient',
+                'as2.nombre_aseguradora AS insurer_name'
+            )
+            ->where('p.numero_historia', $normalizedNumber)
+            ->get();
     }
 
     /**
