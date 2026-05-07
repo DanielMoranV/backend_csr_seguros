@@ -19,4 +19,12 @@ class DevolutionRepository extends BaseRepository implements DevolutionRepositor
     {
         return $this->model->where('invoice_id', $invoiceId)->update($data);
     }
+
+    // Actualiza is_paid para todas las devoluciones de una misma atención
+    public function updateIsPaidByAdmissionNumber(string $admissionNumber, bool $isPaid): void
+    {
+        $this->model
+            ->where('admission_number', $admissionNumber)
+            ->update(['is_paid' => $isPaid]);
+    }
 }

@@ -206,13 +206,18 @@ class CustomQueryController extends Controller
                     'sm.nombre_servicio AS doctor',
                     'd.estado_devolucion AS type',
                     'd.motivo AS reason',
-                    'd.usuario_creacion AS biller',
+                    'c.usuario_creacion AS biller',
                     'last_invoice_data.date_last_invoice',
                     'last_invoice_data.last_invoice',
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
                         WHERE ps2.numero_factura = c.numero_factura
-                    ) AS paid_admission')
+                    ) AS paid_admission'),
+                    DB::raw('EXISTS (
+                        SELECT 1 FROM sisclin.pagos_seguros ps2
+                        INNER JOIN sisclin.comprobantes c2 ON c2.numero_factura = ps2.numero_factura
+                        WHERE c2.atencion_id = a.id
+                    ) AS is_paid')
                 )
                 ->whereIn('d.numero_factura', $invoiceNumbers)
                 ->orderByDesc('a.numero_documento')
@@ -283,7 +288,8 @@ class CustomQueryController extends Controller
                     ) AS paid_admission'),
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
-                        WHERE ps2.numero_documento = d.numero_documento
+                        INNER JOIN sisclin.comprobantes c2 ON c2.numero_factura = ps2.numero_factura
+                        WHERE c2.atencion_id = a.id
                     ) AS is_paid')
                 )
                 ->whereBetween('a.fecha_hora_atencion', [$startDate, $endDate])

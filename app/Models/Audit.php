@@ -18,9 +18,13 @@ class Audit extends Model
         'type',
     ];
 
-    // Relación con la lista de admisiones
     public function admissionsList()
     {
         return $this->hasMany(AdmissionsList::class);
+    }
+
+    public function devolutions()
+    {
+        return $this->hasMany(Devolution::class);
     }
 }

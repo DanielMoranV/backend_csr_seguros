@@ -22,14 +22,25 @@ class StoreDevolutionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            '*.date' => 'required|date',
-            '*.invoice_id' => 'nullable',
-            '*.type' => 'required|string',
-            '*.reason' => 'required|string',
-            '*.period' => 'required|string',
-            '*.biller' => 'required|string',
-            '*.status' => 'nullable|string',
-            '*.admission_id' => 'required|exists:admissions,id',
+            '*.date'             => 'required|date',
+            '*.invoice_id'       => 'nullable',
+            '*.type'             => 'required|string',
+            '*.reason'           => 'required|string',
+            '*.period'           => 'required|string',
+            '*.biller'           => 'required|string',
+            '*.status'           => 'nullable|string',
+            '*.admission_id'     => 'required|exists:admissions,id',
+            '*.sisclin_id'       => 'nullable|string',
+            '*.admission_number'       => 'nullable|string',
+            '*.medical_record_number'  => 'nullable|string',
+            '*.patient_name'           => 'nullable|string',
+            '*.insurer_name'           => 'nullable|string',
+            '*.attendance_date'        => 'nullable|date',
+            '*.doctor'                 => 'nullable|string',
+            '*.invoice_date'           => 'nullable|date',
+            '*.invoice_amount'         => 'nullable|numeric|min:0',
+            '*.is_paid'                => 'nullable|boolean',
+            '*.is_uncollectible'       => 'nullable|boolean',
         ];
     }
 }

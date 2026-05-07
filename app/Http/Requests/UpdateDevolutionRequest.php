@@ -22,14 +22,25 @@ class UpdateDevolutionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'date' => 'nullable|date',
-            'invoice_id' => 'nullable|exists:invoices,id',
-            'type' => 'nullable|string',
-            'reason' => 'nullable|string',
-            'period' => 'nullable|string',
-            'biller' => 'nullable|string',
-            'status' => 'nullable|string',
-            'admission_id' => 'required|exists:admissions,id',
+            'date'              => 'nullable|date',
+            'invoice_id'        => 'nullable|exists:invoices,id',
+            'type'              => 'nullable|string',
+            'reason'            => 'nullable|string',
+            'period'            => 'nullable|string',
+            'biller'            => 'nullable|string',
+            'status'            => 'nullable|string',
+            'admission_id'           => 'required|exists:admissions,id',
+            'sisclin_id'             => 'nullable|string|unique:devolutions,sisclin_id,' . $this->route('devolution')?->id,
+            'admission_number'       => 'nullable|string',
+            'medical_record_number'  => 'nullable|string',
+            'patient_name'           => 'nullable|string',
+            'insurer_name'           => 'nullable|string',
+            'attendance_date'        => 'nullable|date',
+            'doctor'                 => 'nullable|string',
+            'invoice_date'           => 'nullable|date',
+            'invoice_amount'         => 'nullable|numeric|min:0',
+            'is_paid'                => 'nullable|boolean',
+            'is_uncollectible'       => 'nullable|boolean',
         ];
     }
 }

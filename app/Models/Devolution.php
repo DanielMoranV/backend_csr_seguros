@@ -10,6 +10,7 @@ class Devolution extends Model
     protected $table = 'devolutions';
 
     protected $fillable = [
+        'sisclin_id',
         'date',
         'invoice_id',
         'type',
@@ -17,8 +18,26 @@ class Devolution extends Model
         'period',
         'biller',
         'status',
+        'is_paid',
+        'is_uncollectible',
         'admission_id',
+        'admission_number',
+        'medical_record_number',
+        'patient_name',
+        'insurer_name',
+        'attendance_date',
+        'doctor',
+        'invoice_date',
+        'invoice_amount',
         'audit_id',
+    ];
+
+    protected $casts = [
+        'is_paid'           => 'boolean',
+        'is_uncollectible'  => 'boolean',
+        'attendance_date'   => 'datetime',
+        'invoice_date'      => 'datetime',
+        'invoice_amount'    => 'decimal:2',
     ];
 
     // Relación con la admisión
