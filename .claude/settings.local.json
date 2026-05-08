@@ -8,7 +8,8 @@
       "Bash(php -l app/Models/Devolution.php)",
       "Bash(php -l app/Http/Resources/DevolutionResource.php)",
       "Bash(php -l app/Http/Controllers/CustomQueryController.php)",
-      "Bash(php -l database/migrations/2026_05_06_000000_add_sync_fields_to_devolutions_table.php)"
+      "Bash(php -l database/migrations/2026_05_06_000000_add_sync_fields_to_devolutions_table.php)",
+      "Bash(git add *)"
     ]
   }
 }
