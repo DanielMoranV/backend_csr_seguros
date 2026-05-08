@@ -163,6 +163,35 @@ class AdmissionController extends Controller
     }
 
 
+    public function toggleUncollectible(Request $request, string $number)
+    {
+        $normalizedNumber = ltrim($number, '0') ?: '0';
+
+        $admission = \App\Models\Admission::whereRaw("TRIM(LEADING '0' FROM number) = ?", [$normalizedNumber])
+            ->first();
+
+        $currentState = $admission ? $admission->is_uncollectible : false;
+        $newState     = !$currentState;
+
+        $admission = \App\Models\Admission::updateOrCreate(
+            ['number' => $normalizedNumber],
+            [
+                'is_uncollectible'     => $newState,
+                'uncollectible_reason' => $newState
+                    ? ($request->input('uncollectible_reason') ?? ($admission?->uncollectible_reason))
+                    : null,
+                // attendance_date es NOT NULL — se rellena solo en insert, update lo ignora si ya existe
+                'attendance_date'      => $admission?->attendance_date ?? now(),
+            ]
+        );
+
+        return ApiResponseClass::sendResponse([
+            'number'               => $admission->number,
+            'is_uncollectible'     => $admission->is_uncollectible,
+            'uncollectible_reason' => $admission->uncollectible_reason,
+        ], '', 200);
+    }
+
     public function updateMultiple(UpdateAdmissionRequest $request)
     {
         $data = $request->validated();

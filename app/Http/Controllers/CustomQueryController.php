@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Classes\ApiResponseClass;
+use App\Models\Admission;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -24,6 +25,47 @@ class CustomQueryController extends Controller
      * Llama al servicio de migración por número de admisión (document_number).
      * Retorna true si la migración fue exitosa (status === 'completed').
      */
+    /**
+     * Recibe una colección de filas con campo 'number' (numero_documento de Sisclin)
+     * e inyecta is_uncollectible y uncollectible_reason desde la tabla local admissions.
+     * La comparación se hace sin ceros a la izquierda en ambas fuentes.
+     */
+    private function mergeUncollectible(\Illuminate\Support\Collection $rows): \Illuminate\Support\Collection
+    {
+        $numbers = $rows->pluck('number')->filter()->unique()->values()->toArray();
+
+        if (empty($numbers)) {
+            return $rows->map(function ($row) {
+                $row = (array) $row;
+                $row['is_uncollectible']     = false;
+                $row['uncollectible_reason'] = null;
+                return (object) $row;
+            });
+        }
+
+        // Normalizar quitando ceros a la izquierda para comparar
+        $normalizedNumbers = array_map(fn($n) => ltrim((string) $n, '0') ?: '0', $numbers);
+
+        $admissions = Admission::whereIn(
+            DB::raw("TRIM(LEADING '0' FROM number)"),
+            $normalizedNumbers
+        )->get(['number', 'is_uncollectible', 'uncollectible_reason']);
+
+        // Mapa keyed por número normalizado
+        $map = $admissions->keyBy(fn($a) => ltrim((string) $a->number, '0') ?: '0');
+
+        return $rows->map(function ($row) use ($map) {
+            $row  = (array) $row;
+            $key  = ltrim((string) ($row['number'] ?? ''), '0') ?: '0';
+            $match = $map->get($key);
+
+            $row['is_uncollectible']     = $match ? (bool) $match->is_uncollectible : false;
+            $row['uncollectible_reason'] = $match?->uncollectible_reason;
+
+            return (object) $row;
+        });
+    }
+
     private function migrateByDocumentNumber(string $documentNumber): bool
     {
         try {
@@ -211,7 +253,8 @@ class CustomQueryController extends Controller
                     'last_invoice_data.last_invoice',
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
-                        WHERE ps2.numero_factura = c.numero_factura
+                        INNER JOIN sisclin.comprobantes c2 ON c2.numero_factura = ps2.numero_factura
+                        WHERE c2.atencion_id = a.id
                     ) AS paid_admission'),
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
@@ -222,6 +265,8 @@ class CustomQueryController extends Controller
                 ->whereIn('d.numero_factura', $invoiceNumbers)
                 ->orderByDesc('a.numero_documento')
                 ->get();
+
+            $results = $this->mergeUncollectible($results);
 
             return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
         } catch (\Exception $e) {
@@ -284,7 +329,8 @@ class CustomQueryController extends Controller
                     'last_invoice_data.last_invoice',
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
-                        WHERE ps2.numero_factura = c.numero_factura
+                        INNER JOIN sisclin.comprobantes c2 ON c2.numero_factura = ps2.numero_factura
+                        WHERE c2.atencion_id = a.id
                     ) AS paid_admission'),
                     DB::raw('EXISTS (
                         SELECT 1 FROM sisclin.pagos_seguros ps2
@@ -296,6 +342,8 @@ class CustomQueryController extends Controller
                 ->whereNotIn('as2.nombre_aseguradora', ['PARTICULAR', 'PACIENTES PARTICULARES'])
                 ->orderByDesc('d.id_dev')
                 ->get();
+
+            $results = $this->mergeUncollectible($results);
 
             return ApiResponseClass::sendResponse($results, 'Query executed successfully.');
         } catch (\Exception $e) {

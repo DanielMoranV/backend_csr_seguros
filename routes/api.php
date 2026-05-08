@@ -79,6 +79,7 @@ Route::group([
     Route::patch('/update', [AdmissionController::class, 'updateMultiple'])->name('admissions.updateMultiple');
     Route::post('/date-range', [AdmissionController::class, 'admissionsByDateRange'])->name('admissions.admissionsByDateRange');
     Route::get('/by-number/{number}', [AdmissionController::class, 'admissionByNumber'])->name('admissions.admissionByNumber');
+    Route::patch('/{number}/uncollectible', [AdmissionController::class, 'toggleUncollectible'])->name('admissions.toggleUncollectible');
 });
 Route::apiResource('admissions', AdmissionController::class)->middleware('role:dev|admin');
 

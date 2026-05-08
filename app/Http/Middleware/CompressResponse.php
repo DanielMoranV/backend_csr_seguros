@@ -28,9 +28,10 @@ class CompressResponse
             // Verificar si el cliente acepta compresión gzip
             $acceptEncoding = $request->header('Accept-Encoding', '');
             
-            if (strpos($acceptEncoding, 'gzip') !== false && function_exists('gzencode')) {
-                $compressedContent = gzencode($content, 6); // Nivel de compresión 6 (balance entre velocidad y tamaño)
-                
+            // No comprimir si supera 8MB para evitar memory exhaustion (límite PHP: 128MB)
+            if (strpos($acceptEncoding, 'gzip') !== false && function_exists('gzencode') && strlen($content) <= 8 * 1024 * 1024) {
+                $compressedContent = gzencode($content, 6);
+
                 if ($compressedContent !== false) {
                     $response->setContent($compressedContent);
                     $response->headers->set('Content-Encoding', 'gzip');

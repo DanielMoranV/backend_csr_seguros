@@ -21,6 +21,12 @@ class Admission extends Model
         'amount',
         'patient',
         'medical_record_id',
+        'is_uncollectible',
+        'uncollectible_reason',
+    ];
+
+    protected $casts = [
+        'is_uncollectible' => 'boolean',
     ];
 
 
